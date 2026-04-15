@@ -1,0 +1,67 @@
+# Habit Tracker
+
+A full-stack habit tracking application built with React + Vite (frontend) and Express (backend).
+
+## Features
+
+- Create and manage personal habits (e.g., exercise, reading, drinking water)
+- Check off habits daily
+- View today's pending habits
+- Track performance over time
+
+## Project Structure
+
+```
+habit-tracker/
+├── frontend/          (React + Vite, Port 5173)
+├── backend/           (Express, Port 3000)
+└── README.md
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+### Backend Setup
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+The backend will be available at `http://localhost:3000`
+
+## API Endpoints
+
+### Habits
+- `GET /api/habits` - Get all habits
+- `GET /api/habits/:id` - Get a specific habit
+- `POST /api/habits` - Create a new habit
+- `PUT /api/habits/:id` - Update a habit
+- `DELETE /api/habits/:id` - Delete a habit
+
+### Check-ins
+- `POST /api/habits/:habitId/checkin` - Check off a habit
+- `GET /api/habits/:habitId/checkins` - Get check-ins for a habit
+
+## Contributing
+
+Feel free to fork and submit pull requests!
+
+## License
+
+MIT

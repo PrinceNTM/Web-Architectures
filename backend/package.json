@@ -6,16 +6,29 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "npm i && npm run db:generate && npm run db:migrate && node --watch src/server.js",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.9.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^7.8.0",
     "uuid": "^9.0.0"
   },
-  "devDependencies": {},
-  "keywords": ["habit", "tracker"],
+  "keywords": [
+    "habit",
+    "tracker"
+  ],
   "author": "",
   "license": "MIT"
 }

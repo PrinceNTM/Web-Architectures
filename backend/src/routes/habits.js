@@ -1,4 +1,5 @@
 import express from 'express'
+import { authenticate } from '../middleware/authenticate.js'
 import {
   getHabits,
   getHabitById,
@@ -10,6 +11,9 @@ import {
 } from '../controllers/habitController.js'
 
 const router = express.Router()
+
+// Apply authentication middleware to all habit routes
+router.use(authenticate)
 
 // Habit CRUD routes
 router.get('/', getHabits)

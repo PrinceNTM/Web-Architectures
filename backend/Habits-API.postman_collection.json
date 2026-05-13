@@ -1,0 +1,312 @@
+{
+  "info": {
+    "name": "Habits API",
+    "description": "REST API Collection für Habit Tracker - mit Beispiel-Daten und Fehlerfällen",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Habits",
+      "item": [
+        {
+          "name": "GET - Alle Habits abrufen",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits"]
+            },
+            "description": "Gibt alle vorhandenen Habits zurück\n\n**Erwartet Status 200**"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Einzelnes Habit abrufen (erfolgreich)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Gibt ein spezifisches Habit mit der angegebenen ID zurück\n\n**Erwartet Status 200**"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Einzelnes Habit abrufen (404 - nicht gefunden)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "999999"]
+            },
+            "description": "Versucht ein nicht existierendes Habit abzurufen\n\n**Erwartet Status 404 und Fehler-JSON**"
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Neues Habit erstellen (erfolgreich)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Morgenmeditation\",\n  \"description\": \"10 Minuten täglich meditieren\",\n  \"category\": \"Gesundheit\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits"]
+            },
+            "description": "Erstellt ein neues Habit mit vollständigen Daten\n\n**Erwartet Status 201 und erstelltes Habit-Objekt**"
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Neues Habit (400 - Name fehlt)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Dieses Habit hat keinen Namen\",\n  \"category\": \"Sonstiges\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits"]
+            },
+            "description": "Versucht ein Habit ohne erforderlichen 'name' Feld zu erstellen\n\n**Erwartet Status 400 und Fehler-Nachricht**"
+          },
+          "response": []
+        },
+        {
+          "name": "POST - Neues Habit (minimale Daten)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sport treiben\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits"]
+            },
+            "description": "Erstellt ein Habit mit nur erforderlichen Feldern (name)\n\n**Erwartet Status 201**"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Habit aktualisieren (erfolgreich)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Yoga & Meditation\",\n  \"description\": \"20 Minuten täglich\",\n  \"category\": \"Gesundheit & Fitness\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Ersetzt ein existierendes Habit vollständig mit neuen Daten\n\n**Erwartet Status 200 und aktualisiertes Objekt**"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Habit aktualisieren (404 - nicht gefunden)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nicht existierende Update\",\n  \"description\": \"Sollte fehlschlagen\",\n  \"category\": \"Test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits/999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "999999"]
+            },
+            "description": "Versucht ein nicht existierendes Habit zu aktualisieren\n\n**Erwartet Status 404 und Fehler-JSON**"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE - Habit löschen (erfolgreich)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Löscht ein existierendes Habit\n\n**Erwartet Status 204 (No Content - leere Response)**"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE - Habit löschen (404 - nicht gefunden)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "999999"]
+            },
+            "description": "Versucht ein nicht existierendes Habit zu löschen\n\n**Erwartet Status 404 und Fehler-JSON**"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Workflows",
+      "description": "Häufige Workflow-Szenarien",
+      "item": [
+        {
+          "name": "Workflow - Habit erstellen und abrufen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Buch lesen\",\n  \"description\": \"30 Minuten lesen pro Tag\",\n  \"category\": \"Bildung\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits"]
+            },
+            "description": "1. Erstellt ein neues Habit\n2. Merke dir die ID aus der Response\n3. Verwende diese ID in 'Workflow - Habit abrufen'"
+          },
+          "response": []
+        },
+        {
+          "name": "Workflow - Habit abrufen (die erstellte ID)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Ruft das im vorherigen Schritt erstellte Habit ab (setze {{habit_id}})"
+          },
+          "response": []
+        },
+        {
+          "name": "Workflow - Habit bearbeiten",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Buch lesen (erweitert)\",\n  \"description\": \"60 Minuten lesen pro Tag\",\n  \"category\": \"Bildung & Entspannung\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Aktualisiert das Habit (verwende die ID von 'Workflow - Habit erstellen')"
+          },
+          "response": []
+        },
+        {
+          "name": "Workflow - Habit löschen",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/habits/{{habit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "habits", "{{habit_id}}"]
+            },
+            "description": "Löscht das bearbeitete Habit"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "GET - Server Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Überprüft, ob der Server läuft\n\n**Erwartet Status 200 und {\"status\": \"Server is running\"}**"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string",
+      "description": "Base URL der Habits API"
+    },
+    {
+      "key": "habit_id",
+      "value": "1234567890123",
+      "type": "string",
+      "description": "ID eines existierenden Habits - ersetze mit echter ID nach POST-Request"
+    }
+  ]
+}

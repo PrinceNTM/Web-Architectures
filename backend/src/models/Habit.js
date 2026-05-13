@@ -1,50 +1,94 @@
-// In-memory database for now (will be replaced with proper DB)
-let habits = []
-let checkins = []
+import prisma from '../prisma.js'
 
 export const habitModel = {
-  findAll: () => habits,
-  findById: (id) => habits.find(h => h.id === id),
-  create: (data) => {
-    const habit = {
-      id: Date.now().toString(),
-      ...data,
-      createdAt: new Date(),
-    }
-    habits.push(habit)
-    return habit
+  findAll: async () => {
+    return await prisma.habit.findMany({
+      include: {
+        entries: true
+      }
+    })
   },
-  update: (id, data) => {
-    const index = habits.findIndex(h => h.id === id)
-    if (index !== -1) {
-      habits[index] = { ...habits[index], ...data }
-      return habits[index]
-    }
-    return null
+
+  findById: async (id) => {
+    return await prisma.habit.findUnique({
+      where: { id },
+      include: {
+        entries: true
+      }
+    })
   },
-  delete: (id) => {
-    const index = habits.findIndex(h => h.id === id)
-    if (index !== -1) {
-      habits.splice(index, 1)
+
+  create: async (data) => {
+    return await prisma.habit.create({
+      data: {
+        name: data.name,
+        category: data.category
+      },
+      include: {
+        entries: true
+      }
+    })
+  },
+
+  update: async (id, data) => {
+    try {
+      return await prisma.habit.update({
+        where: { id },
+        data: {
+          name: data.name,
+          category: data.category
+        },
+        include: {
+          entries: true
+        }
+      })
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return null // Habit not found
+      }
+      throw error
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      await prisma.habit.delete({
+        where: { id }
+      })
       return true
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return false // Habit not found
+      }
+      throw error
     }
-    return false
   },
 }
 
 export const checkinModel = {
-  createCheckin: (habitId, date) => {
-    const checkin = {
-      id: Date.now().toString(),
-      habitId,
-      date,
-      createdAt: new Date(),
-    }
-    checkins.push(checkin)
-    return checkin
+  createCheckin: async (habitId, date) => {
+    return await prisma.entry.create({
+      data: {
+        habitId,
+        date,
+        value: 1
+      }
+    })
   },
-  getCheckins: (habitId) => checkins.filter(c => c.habitId === habitId),
-  isCheckedIn: (habitId, date) => {
-    return checkins.some(c => c.habitId === habitId && c.date === date)
+
+  getCheckins: async (habitId) => {
+    return await prisma.entry.findMany({
+      where: { habitId }
+    })
+  },
+
+  isCheckedIn: async (habitId, date) => {
+    const entry = await prisma.entry.findFirst({
+      where: {
+        habitId,
+        date
+      }
+    })
+    return !!entry
   },
 }

@@ -10,12 +10,18 @@ const api = axios.create({
   },
 })
 
-// Global response interceptor: on 401, call logout to clear server cookie and redirect to /login
+// Global response interceptor: on 401, redirect to /login
+// Skip auth endpoints to avoid infinite loops (e.g. /auth/me on initial load, /auth/logout itself)
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/me', '/auth/logout']
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status
-    if (status === 401) {
+    const requestUrl = error?.config?.url || ''
+    const isAuthEndpoint = AUTH_ENDPOINTS.some((ep) => requestUrl.includes(ep))
+
+    if (status === 401 && !isAuthEndpoint) {
       try {
         await api.post('/auth/logout')
       } catch (e) {

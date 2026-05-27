@@ -39,13 +39,14 @@ function Login({ setUser }) {
           <p>Bitte melde dich an, um fortzufahren.</p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="error-message" data-cy="error-message">{error}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-field">
             <label className="form-label" htmlFor="login-email">E-Mail-Adresse</label>
             <input
               id="login-email"
+              data-cy="login-email"
               type="email"
               className="form-input"
               value={email}
@@ -58,6 +59,7 @@ function Login({ setUser }) {
             <label className="form-label" htmlFor="login-password">Passwort</label>
             <input
               id="login-password"
+              data-cy="login-password"
               type="password"
               className="form-input"
               value={password}
@@ -66,7 +68,7 @@ function Login({ setUser }) {
             />
           </div>
 
-          <button className="login-btn" type="submit" disabled={isSubmitting}>
+          <button className="login-btn" data-cy="login-submit" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Anmelden...' : 'Anmelden'}
           </button>
         </form>

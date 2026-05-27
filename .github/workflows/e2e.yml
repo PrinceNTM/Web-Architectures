@@ -1,0 +1,46 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install backend deps
+        run: cd backend && npm ci
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+
+      - name: Start backend
+        run: cd backend && npm start &
+
+      - name: Start frontend
+        run: cd frontend && npm run dev &
+
+      - name: Wait for services
+        run: npx wait-on http://localhost:3000/api/health http://localhost:5174 || npx wait-on http://localhost:3000/api/health http://localhost:5173
+
+      - name: Run Cypress
+        run: npx cypress run --config baseUrl=http://localhost:5174 --reporter junit --reporter-options mochaFile=cypress/results/junit-[hash].xml
+
+      - name: Upload JUnit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-junit
+          path: cypress/results

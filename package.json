@@ -1,0 +1,28 @@
+{
+  "name": "web-architectures",
+  "version": "1.0.0",
+  "description": "A full-stack habit tracking application built with React + Vite (frontend) and Express (backend).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "e2e:report": "npx cypress run --config baseUrl=http://localhost:5174 --reporter junit --reporter-options mochaFile=cypress/results/junit-[hash].xml",
+    "e2e:run": "npx cypress run --config baseUrl=http://localhost:5174"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrinceNTM/Web-Architectures.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PrinceNTM/Web-Architectures/issues"
+  },
+  "homepage": "https://github.com/PrinceNTM/Web-Architectures#readme",
+  "devDependencies": {
+    "cypress": "15.16.0",
+    "wait-on": "^7.0.1",
+    "typescript": "^5.2.2"
+  }
+}

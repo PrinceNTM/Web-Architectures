@@ -65,3 +65,16 @@ Feel free to fork and submit pull requests!
 ## License
 
 MIT
+
+## Testing (Studio-Session 06)
+
+Test-Pyramide
+| Ebene | Beispiel | Werkzeug |
+| --- | --- | --- |
+| Unit | Validierungsfunktionen (z.B. Passwort-Check) | Vitest |
+| Integration | POST /api/habits legt DB-Eintrag an | Vitest |
+| E2E | Login-Flow (Login → Cookie → Weiterleitung) | Cypress |
+
+Kritische Bereiche
+- **Authentifizierung / Session-Handling**: Änderungen an Token-Handling, Cookie-Setup oder Middleware können Benutzerzugriff vollständig unterbrechen.
+- **Datenmodell / Migrations**: Änderungen am Prisma-Schema oder an Migrations können Datenverlust oder Inkonsistenzen verursachen.

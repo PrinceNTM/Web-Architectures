@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "npm i && npm run db:generate && npm run db:migrate && node --watch src/server.js",
+    "test": "vitest run",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
@@ -24,6 +25,9 @@
     "jsonwebtoken": "^9.0.3",
     "prisma": "^7.8.0",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
   },
   "keywords": [
     "habit",

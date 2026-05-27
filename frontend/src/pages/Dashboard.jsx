@@ -387,11 +387,12 @@ function Dashboard({ onLogout }) {
               type="text"
               placeholder="Enter a new habit..."
               className="habit-input"
+              data-cy="new-habit-input"
               value={newHabitInput}
               onChange={(e) => setNewHabitInput(e.target.value)}
               onKeyPress={handleKeyPress}
             />
-            <button className="add-btn" onClick={addHabit}>+</button>
+            <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit}>+</button>
             <button className="browse-btn" onClick={() => setShowSuggestions(!showSuggestions)}>Browse</button>
           </div>
 
@@ -417,7 +418,7 @@ function Dashboard({ onLogout }) {
 
           <div className="habits-list">
             {habits.map((habit) => (
-              <div key={habit.id} className="habit-card">
+              <div key={habit.id} className="habit-card" data-cy={`habit-${habit.id}`}>
                 <div className="habit-left">
                   <button
                     className="checkbox"
@@ -440,7 +441,7 @@ function Dashboard({ onLogout }) {
                     />
                   ) : (
                     <>
-                      <h3 style={{ color: habit.completed ? '#06b6d4' : 'white' }}>{habit.name}</h3>
+                      <h3 data-cy="habit-name" style={{ color: habit.completed ? '#06b6d4' : 'white' }}>{habit.name}</h3>
                       <div className="habit-meta">
                         <span>Streak: {habit.streak} days</span>
                         <span className="category">{habit.category}</span>

@@ -54,6 +54,7 @@ function Register() {
             <label className="form-label" htmlFor="register-email">E-Mail-Adresse</label>
             <input
               id="register-email"
+              data-cy="register-email"
               type="email"
               className="form-input"
               value={email}
@@ -66,6 +67,7 @@ function Register() {
             <label className="form-label" htmlFor="register-password">Passwort</label>
             <input
               id="register-password"
+              data-cy="register-password"
               type="password"
               className="form-input"
               value={password}
@@ -78,6 +80,7 @@ function Register() {
             <label className="form-label" htmlFor="register-confirm-password">Passwort bestätigen</label>
             <input
               id="register-confirm-password"
+              data-cy="register-confirm-password"
               type="password"
               className="form-input"
               value={confirmPassword}
@@ -86,7 +89,7 @@ function Register() {
             />
           </div>
 
-          <button className="login-btn" type="submit" disabled={isSubmitting}>
+          <button className="login-btn" data-cy="register-submit" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Registrieren...' : 'Registrieren'}
           </button>
         </form>

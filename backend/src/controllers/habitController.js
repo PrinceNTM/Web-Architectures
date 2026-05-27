@@ -9,7 +9,7 @@ export const getHabits = async (req, res) => {
     res.json(habits)
   } catch (error) {
     console.error('Error fetching habits:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -20,15 +20,15 @@ export const getHabitById = async (req, res) => {
       include: { entries: true }
     })
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: 'Zugriff verweigert.' })
     }
     res.json(habit)
   } catch (error) {
     console.error('Error fetching habit:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -36,7 +36,7 @@ export const createHabit = async (req, res) => {
   try {
     const { name, category } = req.body
     if (!name) {
-      return res.status(400).json({ error: 'Name is required' })
+      return res.status(400).json({ error: 'Name ist erforderlich.' })
     }
     const habit = await prisma.habit.create({
       data: {
@@ -49,7 +49,7 @@ export const createHabit = async (req, res) => {
     res.status(201).json(habit)
   } catch (error) {
     console.error('Error creating habit:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -59,10 +59,10 @@ export const updateHabit = async (req, res) => {
       where: { id: req.params.id }
     })
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: 'Zugriff verweigert.' })
     }
     const updatedHabit = await prisma.habit.update({
       where: { id: req.params.id },
@@ -75,10 +75,10 @@ export const updateHabit = async (req, res) => {
     res.json(updatedHabit)
   } catch (error) {
     if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     console.error('Error updating habit:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -88,10 +88,10 @@ export const deleteHabit = async (req, res) => {
       where: { id: req.params.id }
     })
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: 'Zugriff verweigert.' })
     }
     await prisma.habit.delete({
       where: { id: req.params.id }
@@ -99,10 +99,10 @@ export const deleteHabit = async (req, res) => {
     res.status(204).send()
   } catch (error) {
     if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     console.error('Error deleting habit:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -115,10 +115,10 @@ export const checkInHabit = async (req, res) => {
       where: { id: habitId }
     })
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: 'Zugriff verweigert.' })
     }
 
     const checkin = await prisma.entry.create({
@@ -131,7 +131,7 @@ export const checkInHabit = async (req, res) => {
     res.status(201).json(checkin)
   } catch (error) {
     console.error('Error checking in habit:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
 
@@ -142,10 +142,10 @@ export const getHabitCheckins = async (req, res) => {
       where: { id: habitId }
     })
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' })
+      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: 'Zugriff verweigert.' })
     }
     const checkins = await prisma.entry.findMany({
       where: { habitId }
@@ -153,6 +153,6 @@ export const getHabitCheckins = async (req, res) => {
     res.json(checkins)
   } catch (error) {
     console.error('Error fetching habit checkins:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }

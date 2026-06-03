@@ -1,6 +1,6 @@
 import express from 'express'
 import { authenticate } from '../middleware/authenticate.js'
-import { register, login, me, logout } from '../controllers/authController.js'
+import { register, login, me, logout, getSSEToken } from '../controllers/authController.js'
 
 const router = express.Router()
 
@@ -11,5 +11,6 @@ router.post('/login', login)
 // Protected routes
 router.get('/me', authenticate, me)
 router.post('/logout', authenticate, logout)
+router.get('/sse-token', authenticate, getSSEToken)
 
 export default router

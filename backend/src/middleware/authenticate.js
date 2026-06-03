@@ -5,7 +5,8 @@ const TOKEN_NAME = 'token'
 const UNAUTHORIZED_ERROR = { error: 'Nicht autorisiert.' }
 
 export const authenticate = (req, res, next) => {
-  const token = req.cookies?.[TOKEN_NAME]
+  // Token aus Cookies oder Query-Parameter (für SSE)
+  const token = req.cookies?.[TOKEN_NAME] || req.query?.token
 
   if (!token) {
     return res.status(401).json(UNAUTHORIZED_ERROR)

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { authAPI } from '../services/api.js'
+import { authAPI, habitAPI } from '../services/api.js'
+import { useSSE } from '../hooks/useSSE.js'
 
 function Dashboard({ onLogout }) {
   const [habits, setHabits] = useState([
@@ -40,6 +41,28 @@ function Dashboard({ onLogout }) {
     const timer = setTimeout(() => setShowNotification(false), 4200)
     return () => clearTimeout(timer)
   }, [showNotification])
+
+  // SSE Hook: Reagiere auf neue Habits
+  useSSE((event) => {
+    if (event.type === 'habit_created') {
+      console.log('Neue Gewohnheit angelegt:', event.data)
+      // Hier könntest du die Liste neu laden oder ein Notification zeigen
+      setNotification(`Neue Gewohnheit "${event.data.name}" wurde erstellt!`)
+      setShowNotification(true)
+      
+      // Optional: Habit zur Liste hinzufügen
+      const newHabit = {
+        id: event.data.habitId,
+        name: event.data.name,
+        category: event.data.category || 'General',
+        streak: 0,
+        completedCount: 0,
+        total: 0,
+        isChecked: false,
+      }
+      setHabits((prevHabits) => [...prevHabits, newHabit])
+    }
+  })
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev)
@@ -99,21 +122,34 @@ function Dashboard({ onLogout }) {
     { name: 'Practice gratitude', category: 'Mental Health' },
   ]
 
-  const addHabit = () => {
+  const addHabit = async () => {
     if (newHabitInput.trim() === '') return
 
-    const newHabit = {
-      id: Date.now(),
-      name: newHabitInput,
-      category: 'General',
-      streak: 0,
-      completedCount: 0,
-      total: 0,
-      isChecked: false,
-    }
+    try {
+      // API-Call zum Backend um neue Habit zu erstellen
+      const response = await habitAPI.create({
+        name: newHabitInput,
+        category: 'General',
+      })
 
-    setHabits([...habits, newHabit])
-    setNewHabitInput('')
+      const newHabit = response.data
+      setHabits([...habits, newHabit])
+      setNewHabitInput('')
+    } catch (error) {
+      console.error('Fehler beim Erstellen der Habit:', error)
+      // Bei Fehler trotzdem lokal hinzufügen für Fallback
+      const newHabit = {
+        id: Date.now(),
+        name: newHabitInput,
+        category: 'General',
+        streak: 0,
+        completedCount: 0,
+        total: 0,
+        isChecked: false,
+      }
+      setHabits([...habits, newHabit])
+      setNewHabitInput('')
+    }
   }
 
   const handleKeyPress = (e) => {

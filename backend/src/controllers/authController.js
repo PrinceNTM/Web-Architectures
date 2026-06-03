@@ -95,3 +95,17 @@ export const logout = async (req, res) => {
   })
   return res.json({ success: true })
 }
+
+export const getSSEToken = (req, res) => {
+  // Gibt einen JWT-Token zurück, der mit EventSource verwendet werden kann
+  // Wird über Query-Parameter übermittelt
+  const token = jwt.sign(
+    {
+      userId: req.user.userId,
+      email: req.user.email,
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' },
+  )
+  return res.json({ token })
+}

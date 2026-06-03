@@ -1,4 +1,5 @@
 import prisma from '../prisma.js'
+import { addClient, removeClient, broadcastEvent } from '../utils/sseManager.js'
 
 export const getHabits = async (req, res) => {
   try {
@@ -46,6 +47,15 @@ export const createHabit = async (req, res) => {
       },
       include: { entries: true }
     })
+    
+    // Broadcast event to all connected clients
+    broadcastEvent(req.user.userId, 'habit_created', {
+      habitId: habit.id,
+      name: habit.name,
+      category: habit.category,
+      timestamp: new Date().toISOString()
+    })
+    
     res.status(201).json(habit)
   } catch (error) {
     console.error('Error creating habit:', error)
@@ -155,4 +165,40 @@ export const getHabitCheckins = async (req, res) => {
     console.error('Error fetching habit checkins:', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
+}
+
+export const setupSSEConnection = (req, res) => {
+  const userId = req.user.userId
+  
+  // SSE Response Headers setzen
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  
+  // Client registrieren
+  addClient(userId, res)
+  
+  console.log(`SSE-Connection für User ${userId} hergestellt`)
+  
+  // Initiale Verbindungs-Nachricht senden
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE verbunden' })}\n\n`)
+  
+  // Heartbeat alle 30 Sekunden, um Verbindung lebendig zu halten
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(`: heartbeat\n\n`)
+    } catch (error) {
+      console.error('Fehler beim Heartbeat:', error)
+      clearInterval(heartbeatInterval)
+      removeClient(userId, res)
+    }
+  }, 30000)
+  
+  // Cleanup bei Client-Disconnect
+  req.on('close', () => {
+    console.log(`SSE-Connection für User ${userId} geschlossen`)
+    clearInterval(heartbeatInterval)
+    removeClient(userId, res)
+    res.end()
+  })
 }

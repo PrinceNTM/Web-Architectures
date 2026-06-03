@@ -8,12 +8,16 @@ import {
   deleteHabit,
   checkInHabit,
   getHabitCheckins,
+  setupSSEConnection,
 } from '../controllers/habitController.js'
 
 const router = express.Router()
 
 // Apply authentication middleware to all habit routes
 router.use(authenticate)
+
+// SSE Events endpoint
+router.get('/events/stream', setupSSEConnection)
 
 // Habit CRUD routes
 router.get('/', getHabits)

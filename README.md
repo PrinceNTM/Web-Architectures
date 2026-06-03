@@ -78,3 +78,16 @@ Test-Pyramide
 Kritische Bereiche
 - **Authentifizierung / Session-Handling**: Änderungen an Token-Handling, Cookie-Setup oder Middleware können Benutzerzugriff vollständig unterbrechen.
 - **Datenmodell / Migrations**: Änderungen am Prisma-Schema oder an Migrations können Datenverlust oder Inkonsistenzen verursachen.
+
+## Real-time Web (Studio-Session 07)
+1. Gibt es Daten in eurer App, die sich ändern können, während ein anderer Nutzer die Seite offen hat?
+Ja – theoretisch. Wenn zwei Nutzer gleichzeitig eingeloggt sind und einer ein Habit anlegt oder abhakt, sieht der andere es nicht sofort.
+2. Müssen Änderungen sofort sichtbar sein – oder reicht ein Reload?
+Ja, Änderungen sollten sofort sichtbar sein
+3. Ist die Kommunikation einseitig (Server → Client) oder bidirektional (beide senden)?
+Bidirektional
+4. Wie viele Clients könnten gleichzeitig verbunden sein?
+Der Habit-Tracker wird hauptsächlich von mir selbst genutzt, eventuell mit wenigen Testnutzern.
+Trefft danach eine begründete Technologieentscheidung:
+**Keine Echtzeit nötig.**  
+Ich implementiere Polling oder SSE nur als Lernübung und kennzeichne es als „nicht produktiv notwendig“.

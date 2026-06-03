@@ -60,7 +60,13 @@ function Dashboard({ onLogout }) {
         total: 0,
         isChecked: false,
       }
-      setHabits((prevHabits) => [...prevHabits, newHabit])
+      // Idempotent: Das erstellende Fenster hat die Habit bereits aus der
+      // API-Antwort eingefügt. Niemals dieselbe Habit-ID doppelt hinzufügen.
+      setHabits((prevHabits) =>
+        prevHabits.some((habit) => habit.id === newHabit.id)
+          ? prevHabits
+          : [...prevHabits, newHabit],
+      )
     }
   })
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { authAPI, habitAPI } from '../services/api.js'
-import { useSSE } from '../hooks/useSSE.js'
+import RealtimeUpdates from '../components/RealtimeUpdates.jsx'
 
 function Dashboard({ onLogout }) {
   const [habits, setHabits] = useState([
@@ -42,33 +42,25 @@ function Dashboard({ onLogout }) {
     return () => clearTimeout(timer)
   }, [showNotification])
 
-  // SSE Hook: Reagiere auf neue Habits
-  useSSE((event) => {
-    if (event.type === 'habit_created') {
-      console.log('Neue Gewohnheit angelegt:', event.data)
-      // Hier könntest du die Liste neu laden oder ein Notification zeigen
-      setNotification(`Neue Gewohnheit "${event.data.name}" wurde erstellt!`)
-      setShowNotification(true)
-      
-      // Optional: Habit zur Liste hinzufügen
-      const newHabit = {
-        id: event.data.habitId,
-        name: event.data.name,
-        category: event.data.category || 'General',
-        streak: 0,
-        completedCount: 0,
-        total: 0,
-        isChecked: false,
-      }
-      // Idempotent: Das erstellende Fenster hat die Habit bereits aus der
-      // API-Antwort eingefügt. Niemals dieselbe Habit-ID doppelt hinzufügen.
-      setHabits((prevHabits) =>
-        prevHabits.some((habit) => habit.id === newHabit.id)
-          ? prevHabits
-          : [...prevHabits, newHabit],
-      )
+  const handleRealtimeHabit = useCallback((payload) => {
+    const newHabit = {
+      id: payload.id,
+      name: payload.name,
+      category: payload.category || 'General',
+      streak: 0,
+      completedCount: 0,
+      total: 0,
+      isChecked: false,
     }
-  })
+
+    setHabits((prevHabits) =>
+      prevHabits.some((habit) => habit.id === newHabit.id)
+        ? prevHabits
+        : [...prevHabits, newHabit],
+    )
+    setNotification(`Neue Gewohnheit "${newHabit.name}" wurde erstellt!`)
+    setShowNotification(true)
+  }, [])
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev)
@@ -132,18 +124,30 @@ function Dashboard({ onLogout }) {
     if (newHabitInput.trim() === '') return
 
     try {
-      // API-Call zum Backend um neue Habit zu erstellen
       const response = await habitAPI.create({
         name: newHabitInput,
         category: 'General',
       })
 
       const newHabit = response.data
-      setHabits([...habits, newHabit])
+      setHabits((prevHabits) => [
+        ...prevHabits,
+        {
+          ...newHabit,
+          streak: 0,
+          completedCount: 0,
+          total: 0,
+          isChecked: false,
+        },
+      ])
+      socket.emit('new-task', {
+        id: newHabit.id,
+        name: newHabit.name,
+        category: newHabit.category || 'General',
+      })
       setNewHabitInput('')
     } catch (error) {
       console.error('Fehler beim Erstellen der Habit:', error)
-      // Bei Fehler trotzdem lokal hinzufügen für Fallback
       const newHabit = {
         id: Date.now(),
         name: newHabitInput,
@@ -153,7 +157,7 @@ function Dashboard({ onLogout }) {
         total: 0,
         isChecked: false,
       }
-      setHabits([...habits, newHabit])
+      setHabits((prevHabits) => [...prevHabits, newHabit])
       setNewHabitInput('')
     }
   }
@@ -360,7 +364,9 @@ function Dashboard({ onLogout }) {
   }
 
   return (
-    <div className="app-container">
+    <>
+      <RealtimeUpdates onNewHabit={handleRealtimeHabit} />
+      <div className="app-container">
       {showNotification && (
         <div className="notification-popup" role="status">
           {notification}
@@ -570,6 +576,7 @@ function Dashboard({ onLogout }) {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

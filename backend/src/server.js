@@ -2,26 +2,30 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import http from 'http'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import prisma from './prisma.js'
 import authRoutes from './routes/auth.js'
 import habitRoutes from './routes/habits.js'
+import { initializeSocket } from './realtime/socket.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:5174']
+
+const corsOriginHandler = (origin, callback) => {
+  if (!origin) return callback(null, true)
+  if (allowedOrigins.includes(origin)) return callback(null, true)
+  return callback(new Error('Not allowed by CORS'))
+}
 
 // Middleware
-const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:5174']
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
-    return callback(new Error('Not allowed by CORS'))
-  },
+  origin: corsOriginHandler,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -45,6 +49,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Ein interner Serverfehler ist aufgetreten.' })
 })
 
+const server = http.createServer(app)
+initializeSocket(server, corsOriginHandler)
+
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...')
@@ -58,6 +65,6 @@ process.on('SIGTERM', async () => {
   process.exit(0)
 })
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })

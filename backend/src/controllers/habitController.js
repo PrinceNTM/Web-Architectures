@@ -1,4 +1,5 @@
 import prisma from '../prisma.js'
+import { enqueueEmail } from '../emails/emailQueue.js'
 import { addClient, removeClient, broadcastEvent } from '../utils/sseManager.js'
 
 export const getHabits = async (req, res) => {
@@ -55,6 +56,17 @@ export const createHabit = async (req, res) => {
       category: habit.category,
       timestamp: new Date().toISOString()
     })
+
+    if (req.user?.email) {
+      enqueueEmail({
+        type: 'habit_created',
+        to: req.user.email,
+        habitName: habit.name,
+        createdAt: habit.createdAt || new Date().toISOString(),
+        appUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+        habitId: habit.id,
+      })
+    }
     
     res.status(201).json(habit)
   } catch (error) {

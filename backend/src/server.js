@@ -9,6 +9,7 @@ import prisma from './prisma.js'
 import authRoutes from './routes/auth.js'
 import habitRoutes from './routes/habits.js'
 import { initializeSocket } from './realtime/socket.js'
+import { startEmailQueueWorker } from './emails/emailQueue.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -51,6 +52,7 @@ app.use((err, req, res, next) => {
 
 const server = http.createServer(app)
 initializeSocket(server, corsOriginHandler)
+startEmailQueueWorker()
 
 // Graceful shutdown
 process.on('SIGINT', async () => {

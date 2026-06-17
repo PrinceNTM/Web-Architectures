@@ -190,25 +190,98 @@ Verbesserungsvorschläge für Iteration 2:
 - Bei langen Habit-Namen den Namen im Body kurz wiederholen, aber die Message bewusst knapp halten.
 - Optional kann der CTA-Text noch expliziter werden, z. B. „Zum Habit öffnen“.
 
-## Erfolgskriterien-Check (Studio Session 08)
+## Bestandsaufnahme (Studio Session 9)
 
-1. Notification-Analyse für mindestens zwei Events dokumentiert – Erfüllt
-- Die README enthält eine Analyse für mehrere Events mit Typ, Kanal und Begründung.
+### Architektur-Check & Verantwortlichkeiten
+- **`server.js`**: Zentrales Setup und Middleware-Orchestrierung. Sauber getrennt.
+- **`src/routes/`**: Verantwortlich für das API-Routing. Aktuell delegieren diese direkt an Controller.
+- **`src/controllers/habitController.js`**: Hauptverantwortlich für Habit- und Check-in-Logik.
 
-2. Transactional E-Mail für mindestens ein Event funktioniert – Erfüllt
-- Das Template enthält Habit-Name, Erstellungsdatum und einen direkten Deep Link zur Habit-Ansicht über `/habit/:id`.
+### Identifizierte Optimierungspotenziale
+1. **Geschäftslogik-Leak**: In `habitController.js` (v.a. beim Erstellen von Habits) ist die Logik für Side-Effects (E-Mail-Versand) direkt im Handler implementiert. Ziel: Auslagerung in eine Service-Schicht (`HabitService`).
+2. **Domain-Leak**: Der `habitController` greift direkt auf die `Entry`-Tabelle zu, um Check-ins zu verarbeiten. Fachlich sollte dies über einen dedizierten `Entry`-Bereich (Service/Model) gelöst werden, um die Entkopplung zu wahren.
+3. **Dünne Controller**: Die Handler enthalten aktuell noch direkte Prisma-Queries. Dies erschwert Unit-Tests ohne Datenbank-Mocking.
 
-3. Mailversand läuft asynchron über eine Queue, nicht synchron im Request-Handler – Nicht erfüllt
-- Aktuell wird der Versand direkt im Request-Handler über `void sendHabitCreatedEmail(...)` gestartet. Es gibt noch keine Queue- oder Worker-Schicht.
-- Vorschlag: BullMQ mit Redis oder ein einfaches Background-Worker-Modul einführen.
+### Strategie
+Einführung eines **Service-Layers** zwischen Controllern und Prisma-Client, um fachliche Validierungen und Cross-Domain-Operationen zentral zu kapseln.
 
-4. API-Key in .env, nicht im Code – Erfüllt
-- Der Resend-Schlüssel wird aus `backend/.env` über `RESEND_API_KEY` geladen.
+## Bounded Contexts (Studio Session 9)
 
-5. Zwei Prompt-Iterationen dokumentiert – Erfüllt
-- Die README enthält sowohl eine Basis-Iteration als auch eine zweite Iteration mit UX- und Strukturverbesserungen.
+### Identifizierte Domänen
+- **Habit Definition Context**: Verantwortlich für die Verwaltung der Habit-Stammdaten (`Habit`, `Category`). Definiert die Struktur dessen, was getrackt wird.
+- **Tracking Context**: Verantwortlich für die Erfassung der täglichen Fortschritte (`Entry`, `Check-in`). Nutzt die `habitId` als Fremdschlüssel, enthält aber die Logik für zeitbasierte Auswertungen.
+- **Identity & Access Context**: Verwaltet Nutzeridentitäten und Autorisierung (Tokens, SSE-Tokens). Stellt sicher, dass Daten nach Ownern getrennt bleiben.
 
-6. Git-Commit vorhanden, .env nicht im Commit – Nicht erfüllt
-- Es liegen Repository-Commits vor, aber aktuell gibt es keine Schutzregel für `.env` im Repository-Setup.
-- Vorschlag: `.env` in `.gitignore` ergänzen und zusätzlich eine `.env.example` anlegen.
+### Interaktion & Datenfluss
+Der *Tracking Context* bezieht Definitionen aus dem *Habit Context* über IDs. Bei Statusänderungen (z. B. neues Habit) informiert der *Habit Context* asynchrone Services (wie den Mail-Dienst), um Side-Effects außerhalb der Kern-CRUD-Logik auszuführen.
 
+## Service Layer (Studio Session 9)
+
+Die Einführung eines Service Layers dient der konsequenten Trennung von technischem Protokoll-Handling (HTTP) und fachlicher Geschäftslogik (Domain Logic). Die Controller fungieren nun als reine Vermittler.
+
+### Refactorte Handler
+
+- **Handler 1: POST /api/habits**
+  - **Entfernte Logik**: Validierung der Pflichtfelder (Name) und die direkte Interaktion mit dem Prisma-Client zur Erstellung von Datensätzen.
+  - **Service-Funktion**: `createHabit(data, userId)` in `habits.service.js`.
+  - **Verteilung**: Der Controller extrahiert Daten aus `req.body`, der Service validiert die Domain-Regeln und führt die Datenbankoperation aus.
+
+- **Handler 2: GET /api/habits/:id**
+  - **Entfernte Logik**: Die Suche über Prisma sowie die Logik zur Prüfung, ob das Habit dem anfragenden User gehört (Ownership-Check).
+  - **Service-Funktion**: `getHabitById(id, userId)` in `habits.service.js`.
+  - **Verteilung**: Der Controller reicht Parameter weiter; der Service wirft spezifische Fehler, wenn Daten fehlen oder der Zugriff verweigert wird.
+
+### Dokumentation der Prompt-Iterationen
+
+- **Iteration 1**: Ziel war die grundlegende Extraktion der Logik. Der Fokus lag darauf, die Route-Handler "dünn" zu machen, indem Prisma-Queries in Funktionen ausgelagert wurden.
+- **Iteration 2**: Hier wurde die Architektur präzisiert. Services dürfen nun keine HTTP-Objekte (`req`, `res`) mehr kennen. Zudem wurde eine eigene `ValidationError`-Klasse eingeführt. Dies entkoppelt die Geschäftslogik vollständig vom Web-Framework und ermöglicht ein sauberes Error-Mapping im Controller.
+
+### Vorteile der neuen Struktur
+
+- **Testbarkeit**: Geschäftslogik kann nun via Unit-Tests geprüft werden, ohne einen HTTP-Server simulieren zu müssen.
+- **Klarere Verantwortlichkeiten**: Controller kümmern sich um Request-Parsing und Response-Status; Services um Datenvalidität und Persistenz.
+- **Geringe Kopplung**: Das Backend ist nun robuster gegenüber Änderungen am Framework (z.B. Wechsel von Express auf ein anderes Tool).
+
+---
+
+## Service Layer (Studio Session 9)
+
+### Refactoring-Übersicht
+- **Refactorte Handler**: `POST /api/habits` (Erstellung eines Habits) und `GET /api/habits/:id` (Abrufen eines einzelnen Habits).
+- **Auslagerung**: Die gesamte Geschäftslogik, inklusive Validierung der Eingabedaten und direkter Prisma-Datenbankzugriffe, wurde aus den Controllern in die neue Service-Datei `backend/src/services/habits.service.js` verschoben.
+
+### Iterationsschritte
+1.  **Iteration 1 (Konzept)**: Die Idee war, die Logik in Funktionen auszulagern. Der Controller sollte Input lesen, den Service aufrufen und Output zurückgeben. Fehlerbehandlung mit `try/catch` und generischen Statuscodes (400 für Validierung, 500 für andere Fehler).
+2.  **Iteration 2 (Präzisierung)**: Die Service-Datei `habits.service.js` wurde erstellt und präzisiert. Sie kennt keine HTTP-Objekte (`req`, `res`) und enthält ausschließlich Geschäftslogik. Für Validierungsfehler wurde eine eigene Fehlerklasse `ValidationError` (`backend/src/utils/errors.js`) eingeführt, die einen `statusCode` von 400 mitbringt. Der Controller fängt diese spezifischen Fehler ab und mappt sie korrekt auf HTTP-Antworten. Für nicht gefundene Ressourcen (`GET /api/habits/:id`) wirft der Service nun einen generischen `Error` mit einem `statusCode` von 404, den der Controller ebenfalls abfängt.
+
+### Fehlerbehandlung
+- **Validierungsfehler**: Werden im Service als `ValidationError` geworfen und führen im Controller zu einem HTTP-Status 400 (Bad Request).
+- **Ressource nicht gefunden**: Werden im Service als `Error` mit der Eigenschaft `statusCode: 404` geworfen und führen im Controller zu einem HTTP-Status 404 (Not Found).
+- **Andere Fehler**: Alle anderen unerwarteten Fehler führen im Controller zu einem HTTP-Status 500 (Internal Server Error).
+
+### Vorteile der neuen Struktur
+-   **Trennung der Verantwortlichkeiten (Separation of Concerns)**: Controller sind nun "dünn" und konzentrieren sich ausschließlich auf die HTTP-Schicht (Request-Parsing, Response-Formatierung, Fehler-Mapping). Die Geschäftslogik ist sauber im Service-Layer gekapselt.
+-   **Testbarkeit**: Die Service-Funktionen können jetzt unabhängig von Express-Objekten getestet werden (Unit-Tests), was die Entwicklung und Wartung erleichtert.
+-   **Wiederverwendbarkeit**: Die Geschäftslogik im Service kann potenziell auch von anderen Schnittstellen (z.B. CLI-Tools, Message Queues) genutzt werden, ohne den HTTP-spezifischen Code der Controller mitzuziehen.
+-   **Wartbarkeit und Lesbarkeit**: Der Code ist modularer, leichter zu verstehen und zu pflegen.
+
+### Studio Session 9
+
+## Service Layer (Studio Session 9)
+
+### Refactoring-Übersicht
+- **Refactorte Handler**: `POST /api/habits` (Erstellung) und `GET /api/habits/:id` (Detailansicht).
+- **Auslagerung**: Die gesamte Validierungslogik und die direkten Prisma-Datenbankaufrufe wurden aus den Controllern in den `habits.service.js` verschoben.
+
+### Iterationsschritte
+1. **Iteration 1**: Extraktion der Logik in Funktionen. Der Controller delegiert nun die Arbeit, kümmert sich aber noch um das Error-Mapping.
+2. **Iteration 2**: Vollständige Entkopplung. Die Services haben keine Kenntnis mehr von Express-Objekten (`req`, `res`). Einführung einer dedizierten `ValidationError`-Klasse für präzises Error-Handling.
+
+### Vorteile der neuen Struktur
+- **Testbarkeit**: Geschäftslogik kann nun in Unit-Tests geprüft werden, ohne einen HTTP-Server zu simulieren.
+- **Wiederverwendbarkeit**: Die `createHabit`-Logik könnte nun auch durch andere Trigger (z. B. CLI oder Cron-Jobs) genutzt werden.
+- **Dünne Controller**: Die Controller-Dateien sind deutlich übersichtlicher und konzentrieren sich nur auf das HTTP-Protokoll.
+
+---
+
+### Studio Session 9

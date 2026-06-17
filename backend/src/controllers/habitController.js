@@ -1,6 +1,11 @@
 import prisma from '../prisma.js'
 import { enqueueEmail } from '../emails/emailQueue.js'
 import { addClient, removeClient, broadcastEvent } from '../utils/sseManager.js'
+import * as HabitService from '../services/habits.service.js';
+import { ValidationError } from '../utils/errors.js';
+
+// Direkte Prisma-Importe und SSE/Email-Utility-Importe wurden aus dem Controller entfernt,
+// da deren Logik nun im Service-Layer gekapselt ist.
 
 export const getHabits = async (req, res) => {
   try {
@@ -17,61 +22,32 @@ export const getHabits = async (req, res) => {
 
 export const getHabitById = async (req, res) => {
   try {
-    const habit = await prisma.habit.findUnique({
-      where: { id: req.params.id },
-      include: { entries: true }
-    })
-    if (!habit) {
-      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
-    }
-    if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Zugriff verweigert.' })
-    }
-    res.json(habit)
+    const habit = await HabitService.getHabitById(req.params.id, req.user.userId);
+    return res.status(200).json(habit);
   } catch (error) {
-    console.error('Error fetching habit:', error)
-    res.status(500).json({ error: 'Interner Serverfehler.' })
+    const status = error.statusCode || 500;
+    console.error(`Error fetching habit (ID: ${req.params.id}):`, error.message); // Spezifische ID für Debugging loggen
+    return res.status(status).json({ error: error.message || 'Interner Serverfehler.' });
   }
 }
 
 export const createHabit = async (req, res) => {
   try {
-    const { name, category } = req.body
-    if (!name) {
-      return res.status(400).json({ error: 'Name ist erforderlich.' })
-    }
-    const habit = await prisma.habit.create({
-      data: {
-        name,
-        category,
-        userId: req.user.userId
-      },
-      include: { entries: true }
-    })
-    
-    // Broadcast event to all connected clients
-    broadcastEvent(req.user.userId, 'habit_created', {
-      habitId: habit.id,
-      name: habit.name,
-      category: habit.category,
-      timestamp: new Date().toISOString()
-    })
+    // 1. Input lesen
+    const userId = req.user.id; 
+    const data = req.body;
 
-    if (req.user?.email) {
-      enqueueEmail({
-        type: 'habit_created',
-        to: req.user.email,
-        habitName: habit.name,
-        createdAt: habit.createdAt || new Date().toISOString(),
-        appUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
-        habitId: habit.id,
-      })
-    }
-    
-    res.status(201).json(habit)
+    // 2. Service aufrufen
+    const newHabit = await HabitService.createHabit(data, userId);
+
+    // 3. Ergebnis zurückgeben
+    return res.status(201).json(newHabit);
   } catch (error) {
-    console.error('Error creating habit:', error)
-    res.status(500).json({ error: 'Interner Serverfehler.' })
+    // 4. Fehler korrekt mappen
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+    return res.status(500).json({ error: 'Interner Serverfehler.' });
   }
 }
 

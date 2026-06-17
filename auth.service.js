@@ -31,10 +31,13 @@ export const authenticateUser = async (email, password) => {
   const normalizedEmail = email.toLowerCase();
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-  if (!user) return null;
+  // Timing-safe-ish check: bcrypt.compare sollte immer ausgeführt werden, 
+  // um User-Enumeration durch Zeitmessung zu erschweren.
+  const dummyHash = "$2b$10$abcdefghijklmnopqrstuv"; // Fake-Hash für nicht existierende User
+  const passwordMatches = await bcrypt.compare(password, user ? user.password : dummyHash);
 
-  const passwordMatches = await bcrypt.compare(password, user.password);
-  return passwordMatches ? user : null;
+  if (!user || !passwordMatches) return null;
+  return user;
 };
 
 /**

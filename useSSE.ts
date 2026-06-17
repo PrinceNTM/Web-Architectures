@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { authFetch } from './utils/authFetch';
 
 /**
  * Custom Hook für Server-Sent Events (SSE)
@@ -50,11 +51,8 @@ export const useSSE = (onEvent: (data: any) => void, eventType: string | null = 
 
     const connectSSE = async () => {
       try {
-        // Hier nutzen wir direkt fetch mit dem Token für den Stream-Initialisierungs-Token
-        const token = localStorage.getItem('token');
-        const sseTokenResponse = await fetch(`${API_URL}/auth/sse-token`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // Nutzung von authFetch statt manuellem fetch
+        const sseTokenResponse = await authFetch(`${API_URL}/auth/sse-token`);
         if (isCancelled) return
         const { token: sseToken } = await sseTokenResponse.json();
 

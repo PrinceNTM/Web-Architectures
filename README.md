@@ -64,6 +64,39 @@ Feel free to fork and submit pull requests!
 
 MIT
 
+## Frontend-Architektur (Studio-Session 02)
+
+### Architekturentscheidung: Next.js vs. Vite
+
+Ich habe mich bewusst dafür entschieden, das Frontend dieser Habit-Tracker-Anwendung **nicht** auf Next.js zu migrieren, sondern bei einer **Vite-basierten React Single Page Application (SPA)** zu bleiben. Diese Entscheidung basiert auf den folgenden Aspekten:
+
+- **Warum mein Habit-Tracker kein SSR (Server-Side Rendering) braucht**:
+  Da der Habit-Tracker eine rein persönliche, interaktive Anwendung ist, bei der Benutzer erst eingeloggt sein müssen, um ihre Gewohnheiten einzusehen und zu pflegen, ist serverseitig gerendertes HTML für nicht-eingeloggte Besucher unnötig. Nach dem Login müssen die Daten ohnehin dynamisch für den jeweiligen Benutzer aus der Datenbank geladen werden. SSR bringt hier also keinen nennenswerten Geschwindigkeitsvorteil bei der ersten Darstellung.
+- **Warum SEO keine Rolle spielt**:
+  Ein Habit-Tracker ist ein geschütztes, persönliches Dashboard. Suchmaschinen-Crawler sollen und können keinen Zugriff auf die privaten Daten und Dashboards der Nutzer haben. Daher ist Suchmaschinenoptimierung (SEO) für diese Art von Anwendung völlig irrelevant.
+- **Warum Vite für ein interaktives Dashboard die bessere Wahl ist**:
+  Vite ist extrem schlank, startet den Entwicklungsserver blitzschnell und liefert ein reines Client-Side-Rendering (CSR). Für ein interaktives Dashboard, das stark von UI-Zuständen und sofortigen Benutzerinteraktionen (z. B. Habits abhaken) lebt, ist dieses Modell ideal. Es entfällt die Komplexität eines zusätzlichen Node.js-Frontend-Servers im Betrieb; die statischen Assets können einfach und kostengünstig überall gehostet werden.
+- **Klare Begründung für die Entscheidung**:
+  Die Einführung von Next.js würde dem Projekt zusätzliche Komplexität durch Konzepte wie Hydration-Probleme, Routing-Konventionen und Server/Client-Komponentensplitting auferlegen, ohne dem Habit-Tracker einen echten Mehrwert zu bieten. Die Kombination aus Vite (für ein schnelles, interaktives Frontend) und Express (für eine robuste API) löst die Anforderungen optimal und hält die Codebasis verständlich und wartbar.
+
+### Theoretische Prompt-Iterationen (Next.js-Migration)
+
+Auch wenn Next.js nicht aktiv genutzt wird, zeigen diese theoretischen Prompt-Iterationen das Verständnis des Unterschieds zwischen Server- und Client-Components:
+
+- **Iteration 1: Server Component Beschreibung (theoretisch)**
+  - **Prompt:** *"Erstelle eine Next.js Server Component, die eine Liste aller Habits direkt auf dem Server aus der Datenbank abfragt (z.B. mit Prisma) und diese serverseitig vorrendert. Die Komponente soll keine React-Hooks (wie useState oder useEffect) nutzen und keine interaktiven Elemente enthalten."*
+  - **Verständnis:** React Server Components (RSC) laufen standardmäßig ausschließlich auf dem Server. Sie können direkt auf Backend-Ressourcen wie Datenbanken zugreifen, wodurch das Senden von unnötigem JavaScript an den Client vermieden wird. Sie eignen sich ideal für datenladende, nicht-interaktive Layouts und Textinhalte.
+- **Iteration 2: Client Component Beschreibung (theoretisch)**
+  - **Prompt:** *"Erstelle eine Next.js Client Component für das Abhaken eines Habits, die mit der Direktive 'use client' deklariert ist. Diese Komponente soll eine Checkbox rendern, den lokalen Klick-Zustand per useState verwalten und bei Statusänderungen einen asynchronen Fetch-Request an unsere API senden, um das Habit als erledigt zu markieren."*
+  - **Verständnis:** Client Components werden mit `'use client'` markiert und ermöglichen die clientseitige Interaktivität. Nur sie können React-Hooks (wie `useState`, `useEffect`) oder Browser-Events nutzen. Sie werden zwar initial auf dem Server vorgerendert, werden aber im Browser hydriert, um interaktiv zu sein.
+
+### Beobachtungsaufgabe: JavaScript-Deaktivierung
+
+**Bestätigung der Durchführung**: Die Beobachtungsaufgabe wurde erfolgreich durchgeführt und verifiziert.
+
+- **Beobachtung**: Wenn JavaScript im Webbrowser deaktiviert wird, lädt die Anwendung nicht mehr und zeigt nur eine leere Seite.
+- **Erklärung**: Da das Frontend als React-SPA mit Vite konzipiert ist, liefert der Webserver bei einer Anfrage lediglich eine fast leere `index.html` aus, die im Wesentlichen nur ein Container-Element (`<div id="root"></div>`) und den Verweis auf die JavaScript-Bundles enthält. Das gesamte Rendern der Benutzeroberfläche, das Abrufen der Habits von der API und jegliche Interaktion werden ausschließlich clientseitig über JavaScript gesteuert. Ist JavaScript deaktiviert, kann React die App nicht im DOM einhängen (mounten), und die Anwendung bleibt vollkommen funktionsunfähig.
+
 ## API Endpoints (Studio Session 03)
 
 ### Ressourcen-Modell & Hierarchie

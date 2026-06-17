@@ -121,7 +121,7 @@ Wenn der Server neu startet, verlieren verbundene Clients ihre aktive Socket-Ver
 
 Echtzeit‑Kommunikation wäre in meinem Projekt vor allem für die Habit‑Liste und Check‑ins sinnvoll, da mehrere offene Clients hier von sofort sichtbaren Änderungen profitieren könnten. Bereiche wie Authentifizierung oder Detailabfragen benötigen dagegen keine Live‑Verbindung und funktionieren als klassische Request/Response‑Vorgänge. Für die meisten Anwendungsfälle ist Polling die einfachere und passendere Lösung, da mein Backend überwiegend als CRUD‑API aufgebaut ist. Ich stimme der Einschätzung zu.
 
-## Studio Session 08
+## Async Messaging (Studio Session 08)
 
 ### Analyse der potenziellen Events
 Die App ist aktuell vor allem ein persönlicher Habit-Tracker. Es gibt keine echte Multi-User-Kollaboration, daher sind die relevanten "anderen Nutzer" in erster Linie weitere offene Sessions desselben Accounts oder ein theoretischer gemeinsamer Feed.
@@ -217,8 +217,6 @@ Der *Tracking Context* bezieht Definitionen aus dem *Habit Context* über IDs. B
 
 ## Service Layer (Studio Session 9)
 
-Die Einführung eines Service Layers dient der konsequenten Trennung von technischem Protokoll-Handling (HTTP) und fachlicher Geschäftslogik (Domain Logic). Die Controller fungieren nun als reine Vermittler.
-
 ### Refactorte Handler
 
 - **Handler 1: POST /api/habits**
@@ -242,8 +240,6 @@ Die Einführung eines Service Layers dient der konsequenten Trennung von technis
 - **Klarere Verantwortlichkeiten**: Controller kümmern sich um Request-Parsing und Response-Status; Services um Datenvalidität und Persistenz.
 - **Geringe Kopplung**: Das Backend ist nun robuster gegenüber Änderungen am Framework (z.B. Wechsel von Express auf ein anderes Tool).
 
----
-
 ## Service Layer (Studio Session 9)
 
 ### Refactoring-Übersicht
@@ -265,8 +261,6 @@ Die Einführung eines Service Layers dient der konsequenten Trennung von technis
 -   **Wiederverwendbarkeit**: Die Geschäftslogik im Service kann potenziell auch von anderen Schnittstellen (z.B. CLI-Tools, Message Queues) genutzt werden, ohne den HTTP-spezifischen Code der Controller mitzuziehen.
 -   **Wartbarkeit und Lesbarkeit**: Der Code ist modularer, leichter zu verstehen und zu pflegen.
 
-### Studio Session 9
-
 ## Service Layer (Studio Session 9)
 
 ### Refactoring-Übersicht
@@ -282,6 +276,35 @@ Die Einführung eines Service Layers dient der konsequenten Trennung von technis
 - **Wiederverwendbarkeit**: Die `createHabit`-Logik könnte nun auch durch andere Trigger (z. B. CLI oder Cron-Jobs) genutzt werden.
 - **Dünne Controller**: Die Controller-Dateien sind deutlich übersichtlicher und konzentrieren sich nur auf das HTTP-Protokoll.
 
----
+## Modulschnittstellen
 
-### Studio Session 9
+### habits.service.js
+- **öffentlich**:
+  - `getAllHabits(userId)`: Ruft alle Habits eines Benutzers ab.
+  - `createHabit(data, userId)`: Erstellt ein neues Habit.
+  - `getHabitById(id, userId)`: Ruft ein Habit anhand seiner ID und der Benutzer-ID ab.
+  - `updateHabit(id, data, userId)`: Aktualisiert ein bestehendes Habit.
+  - `deleteHabit(id, userId)`: Löscht ein Habit.
+  - `getEntriesForPeriod(userId, from, to)`: Ruft alle Habit-Einträge eines Benutzers in einem bestimmten Zeitraum ab.
+- **intern**:
+  - (Validierungslogik wie `name.trim() === ''` ist aktuell inline in `createHabit` und `updateHabit`.)
+
+### stats.service.js
+- **öffentlich**:
+  - `getStatsForUser(userId)`: Berechnet und liefert Statistiken für einen Benutzer.
+- **intern**:
+  - (Aktuell keine explizit ausgelagerten internen Funktionen, nutzt `habitsService` für Daten.)
+
+### auth.service.js
+- **öffentlich**:
+  - `registerUser(email, password)`: Registriert einen neuen Benutzer.
+  - `authenticateUser(email, password)`: Authentifiziert einen Benutzer und gibt diesen zurück.
+  - `generateToken(user)`: Generiert einen JWT für einen Benutzer.
+- **intern**:
+  - (Hashing-Logik mit `bcrypt` ist inline in `registerUser` und `authenticateUser`.)
+  - (Token-Signierung mit `jsonwebtoken` ist inline in `generateToken`.)
+
+## Architektur-reviewer
+
+### Microservices-Vorbereitung (Studio Session 9)
+Das Stats-Modul ist am leichtesten extrahierbar, da es als reiner Daten-Konsument fungiert und keine direkten Schreib-Abhängigkeiten zum Habit-Kern besitzt. Die bereits erfolgte Kapselung des Datenzugriffs über Service-Schnittstellen macht es zu einem idealen Kandidaten für einen eigenständigen Analyse-Dienst.

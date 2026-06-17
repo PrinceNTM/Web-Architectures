@@ -1,7 +1,6 @@
-import prisma from '../prisma.js'
-import { enqueueEmail } from '../emails/emailQueue.js'
-import { addClient, removeClient, broadcastEvent } from '../utils/sseManager.js'
+import { addClient, removeClient } from '../utils/sseManager.js'
 import * as HabitService from '../services/habits.service.js';
+import * as TrackingService from '../services/tracking.service.js';
 import { ValidationError } from '../utils/errors.js';
 
 // Direkte Prisma-Importe und SSE/Email-Utility-Importe wurden aus dem Controller entfernt,
@@ -9,11 +8,8 @@ import { ValidationError } from '../utils/errors.js';
 
 export const getHabits = async (req, res) => {
   try {
-    const habits = await prisma.habit.findMany({
-      where: { userId: req.user.userId },
-      include: { entries: true }
-    })
-    res.json(habits)
+    const habits = await HabitService.getAllHabits(req.user.userId);
+    return res.json(habits);
   } catch (error) {
     console.error('Error fetching habits:', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
@@ -53,26 +49,11 @@ export const createHabit = async (req, res) => {
 
 export const updateHabit = async (req, res) => {
   try {
-    const habit = await prisma.habit.findUnique({
-      where: { id: req.params.id }
-    })
-    if (!habit) {
-      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
-    }
-    if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Zugriff verweigert.' })
-    }
-    const updatedHabit = await prisma.habit.update({
-      where: { id: req.params.id },
-      data: {
-        name: req.body.name,
-        category: req.body.category
-      },
-      include: { entries: true }
-    })
-    res.json(updatedHabit)
+    const updatedHabit = await HabitService.updateHabit(req.params.id, req.body, req.user.userId);
+    return res.json(updatedHabit)
   } catch (error) {
-    if (error.code === 'P2025') {
+    const status = error.statusCode || 500;
+    if (error.code === 'P2025' || status === 404) {
       return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     console.error('Error updating habit:', error)
@@ -82,21 +63,11 @@ export const updateHabit = async (req, res) => {
 
 export const deleteHabit = async (req, res) => {
   try {
-    const habit = await prisma.habit.findUnique({
-      where: { id: req.params.id }
-    })
-    if (!habit) {
-      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
-    }
-    if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Zugriff verweigert.' })
-    }
-    await prisma.habit.delete({
-      where: { id: req.params.id }
-    })
-    res.status(204).send()
+    await HabitService.deleteHabit(req.params.id, req.user.userId);
+    return res.status(204).send();
   } catch (error) {
-    if (error.code === 'P2025') {
+    const status = error.statusCode || 500;
+    if (error.code === 'P2025' || status === 404) {
       return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
     console.error('Error deleting habit:', error)
@@ -108,24 +79,13 @@ export const checkInHabit = async (req, res) => {
   try {
     const { habitId } = req.params
     const { date } = req.body
+    const userId = req.user.userId
 
-    const habit = await prisma.habit.findUnique({
-      where: { id: habitId }
-    })
-    if (!habit) {
-      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
-    }
-    if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Zugriff verweigert.' })
-    }
+    // Guard: Prüft Existenz und Ownership im Habit Context
+    await HabitService.getHabitById(habitId, userId);
 
-    const checkin = await prisma.entry.create({
-      data: {
-        habitId,
-        date: date || new Date().toISOString().split('T')[0],
-        value: 1
-      }
-    })
+    // Aktion: Erstellt Eintrag im Tracking Context
+    const checkin = await TrackingService.createEntry(habitId, date, 1)
     res.status(201).json(checkin)
   } catch (error) {
     console.error('Error checking in habit:', error)
@@ -136,18 +96,13 @@ export const checkInHabit = async (req, res) => {
 export const getHabitCheckins = async (req, res) => {
   try {
     const { habitId } = req.params
-    const habit = await prisma.habit.findUnique({
-      where: { id: habitId }
-    })
-    if (!habit) {
-      return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
-    }
-    if (habit.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'Zugriff verweigert.' })
-    }
-    const checkins = await prisma.entry.findMany({
-      where: { habitId }
-    })
+    const userId = req.user.userId
+
+    // Guard
+    await HabitService.getHabitById(habitId, userId);
+
+    // Aktion via Tracking Service
+    const checkins = await TrackingService.getEntriesByHabitId(habitId)
     res.json(checkins)
   } catch (error) {
     console.error('Error fetching habit checkins:', error)

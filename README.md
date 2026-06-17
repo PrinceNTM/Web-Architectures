@@ -45,7 +45,26 @@ npm run dev
 
 The backend will be available at `http://localhost:3000`
 
-## API Endpoints
+### Habits
+- `GET /api/habits` - Get all habits
+- `GET /api/habits/:id` - Get a specific habit
+- `POST /api/habits` - Create a new habit
+- `PUT /api/habits/:id` - Update a habit
+- `DELETE /api/habits/:id` - Delete a habit
+
+### Check-ins
+- `POST /api/habits/:habitId/checkin` - Check off a habit
+- `GET /api/habits/:habitId/checkins` - Get check-ins for a habit
+
+## Contributing
+
+Feel free to fork and submit pull requests!
+
+## License
+
+MIT
+
+## API Endpoints (Studio Session 03)
 
 ### Ressourcen-Modell & Hierarchie
 Die API ist in zwei Hauptressourcen unterteilt:
@@ -65,24 +84,6 @@ Wir nutzen ein **Nested Design** für Check-ins (`/api/habits/:id/checkin`), da 
 *   **Prompt:** "Lagere die Routen in eine eigene Datei aus. Füge Validierung hinzu (Name ist Pflicht) und stelle sicher, dass POST 201, DELETE 204 und Suchen nach nicht existierenden IDs 404 zurückgeben."
 *   **Ergebnis:** Strukturierte Routen-Datei mit korrektem HTTP-Mapping und Fehlerbehandlung.
 
-### Habits
-- `GET /api/habits` - Get all habits
-- `GET /api/habits/:id` - Get a specific habit
-- `POST /api/habits` - Create a new habit
-- `PUT /api/habits/:id` - Update a habit
-- `DELETE /api/habits/:id` - Delete a habit
-
-### Check-ins
-- `POST /api/habits/:habitId/checkin` - Check off a habit
-- `GET /api/habits/:habitId/checkins` - Get check-ins for a habit
-
-## Contributing
-
-Feel free to fork and submit pull requests!
-
-## License
-
-MIT
 ## Persistenz-Check (Studio Session 4)
 
 ### 1. Persistenz-Test-Protokoll

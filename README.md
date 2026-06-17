@@ -47,6 +47,24 @@ The backend will be available at `http://localhost:3000`
 
 ## API Endpoints
 
+### Ressourcen-Modell & Hierarchie
+Die API ist in zwei Hauptressourcen unterteilt:
+1. **Habits**: Die Definition einer Gewohnheit (Top-Level).
+2. **Check-ins**: Tägliche Ausführungen, die zwingend an ein Habit gebunden sind.
+
+**Design-Entscheidung:**
+Wir nutzen ein **Nested Design** für Check-ins (`/api/habits/:id/checkin`), da ein Check-in ohne die Referenz auf ein existierendes Habit fachlich nicht existieren kann (Composition). Die Habits selbst sind flach organisiert, um einen schnellen Zugriff auf die Liste zu ermöglichen.
+
+## Prompt-Iterationen (Studio Session 03)
+
+### Iteration 1: Basis-Setup
+*   **Prompt:** "Erstelle eine Express-API für einen Habit-Tracker. Ich brauche CRUD-Endpunkte für 'Habits' (Name, Beschreibung). Speichere die Daten vorerst in einem einfachen Array im RAM."
+*   **Ergebnis:** Grundgerüst mit GET, POST, DELETE in einer Datei.
+
+### Iteration 2: Verfeinerung & Status-Codes
+*   **Prompt:** "Lagere die Routen in eine eigene Datei aus. Füge Validierung hinzu (Name ist Pflicht) und stelle sicher, dass POST 201, DELETE 204 und Suchen nach nicht existierenden IDs 404 zurückgeben."
+*   **Ergebnis:** Strukturierte Routen-Datei mit korrektem HTTP-Mapping und Fehlerbehandlung.
+
 ### Habits
 - `GET /api/habits` - Get all habits
 - `GET /api/habits/:id` - Get a specific habit
@@ -65,6 +83,36 @@ Feel free to fork and submit pull requests!
 ## License
 
 MIT
+## Persistenz-Check (Studio Session 4)
+
+### 1. Persistenz-Test-Protokoll
+- **Schritt 1:** POST `/api/habits` mit "Test Habit". ID erhalten: `cl...123`.
+- **Schritt 2:** Server gestoppt (`Ctrl+C`).
+- **Schritt 3:** Server neu gestartet (`npm run dev`).
+- **Schritt 4:** GET `/api/habits/cl...123`.
+- **Ergebnis:** Daten sind identisch vorhanden. Test bestanden.
+
+### 2. Architekturentscheidung: SQLite vs. Alternativen
+Für diesen Habit-Tracker wurde **SQLite via Prisma** gewählt.
+- **Warum kein Redis?** Da Habits dauerhaft gespeichert werden müssen und keine reinen flüchtigen Session-Daten sind.
+- **Warum kein S3?** Wir speichern strukturierte relationale Daten, keine unstrukturierten Dateien (Blobs).
+- **Vorteil SQLite:** "Zero-Config", die Datenbank ist eine einfache Datei im Projekt, was das lokale Prototyping massiv beschleunigt.
+
+### 3. Sicherheit
+- `.env` Datei enthält `DATABASE_URL` und `JWT_SECRET`.
+- `.env` ist in `.gitignore` eingetragen und wird nicht versioniert.
+
+## Sicherheits-Audit (Studio Session 5)
+
+Im Rahmen der Studio Session 5 wurden folgende API-Lücken identifiziert und behoben:
+1. **Insecure Direct Object Reference (IDOR)**: In den alten `GET /api/habits/:id` Handlern war es möglich, durch bloßes Erraten der ID die Gewohnheiten anderer Nutzer einzusehen.
+2. **Fehlende Autorisierung**: Der `DELETE`-Endpunkt prüfte lediglich die Existenz einer ID, nicht aber, ob der löschende Nutzer auch der Eigentümer des Datensatzes ist.
+3. **Information Exposure / Mass Assignment**: Die API gab ungefilterte Datenbank-Objekte zurück, was interne Felder (wie `password` oder `userId`) unnötig exponierte.
+
+### JWT Sicherheit & Payload-Manipulation
+Ein manipulierter JWT-Payload (z. B. das Ändern der `userId` im Browser) funktioniert nicht, da jeder Token mit einem geheimen Schlüssel (`JWT_SECRET`) auf dem Server signiert wird. 
+
+Wenn ein Client den Payload ändert, stimmt die mathematische Signatur nicht mehr mit dem Inhalt überein. Die `authenticate`-Middleware verifiziert diese Signatur bei jedem Request; schlägt dies fehl, wird der Zugriff sofort mit einem `401 Unauthorized` abgelehnt.
 
 ## Testing (Studio-Session 06)
 

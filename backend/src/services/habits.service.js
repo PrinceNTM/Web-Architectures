@@ -1,0 +1,71 @@
+import prisma from '../prisma.js';
+import { enqueueEmail } from '../emails/emailQueue.js';
+import { broadcastEvent } from '../utils/sseManager.js';
+import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors.js';
+
+export const getAllHabits = async (userId) => {
+  return await prisma.habit.findMany({
+    where: { userId },
+    include: { entries: true }
+  });
+};
+
+export const getHabitById = async (id, userId) => {
+  const habit = await prisma.habit.findUnique({ where: { id } });
+  if (!habit) {
+    throw new NotFoundError('Gewohnheit nicht gefunden.');
+  }
+  if (habit.userId !== userId) {
+    throw new ForbiddenError('Zugriff verweigert.');
+  }
+  return habit;
+};
+
+export const createHabit = async (data, userId) => {
+  if (!data.name || data.name.trim() === '') {
+    throw new ValidationError('Name ist erforderlich.');
+  }
+  if (data.name.length > 255) {
+    throw new ValidationError('Name ist zu lang (max. 255 Zeichen).');
+  }
+
+  const habit = await prisma.habit.create({
+    data: {
+      name: data.name,
+      category: data.category || null,
+      userId
+    }
+  });
+  
+  // Side-Effects gekapselt im Service
+  enqueueEmail({ type: 'habit-created', data: habit });
+  broadcastEvent(userId, { type: 'habit-created', habit });
+  
+  return habit;
+};
+
+export const updateHabit = async (id, data, userId) => {
+  // Validierung via getHabitById (Ownership-Check)
+  await getHabitById(id, userId);
+
+  if (!data.name || data.name.trim() === '') {
+    throw new ValidationError('Name ist erforderlich.');
+  }
+  if (data.name.length > 255) {
+    throw new ValidationError('Name ist zu lang (max. 255 Zeichen).');
+  }
+
+  return await prisma.habit.update({
+    where: { id },
+    data: {
+      name: data.name,
+      category: data.category || null
+    },
+    include: { entries: true }
+  });
+};
+
+export const deleteHabit = async (id, userId) => {
+  await getHabitById(id, userId);
+  return await prisma.habit.delete({ where: { id } });
+};

@@ -71,7 +71,7 @@ MIT
 Ich habe mich bewusst dafür entschieden, das Frontend dieser Habit-Tracker-Anwendung **nicht** auf Next.js zu migrieren, sondern bei einer **Vite-basierten React Single Page Application (SPA)** zu bleiben. Diese Entscheidung basiert auf den folgenden Aspekten:
 
 - **Warum mein Habit-Tracker kein SSR (Server-Side Rendering) braucht**:
-  Da der Habit-Tracker eine rein persönliche, interaktive Anwendung ist, bei der Benutzer erst eingeloggt sein müssen, um ihre Gewohnheiten einzusehen und zu pflegen, ist serverseitig gerendertes HTML für nicht-eingeloggte Besucher unnötig. Nach dem Login müssen die Daten ohnehin dynamisch für den jeweiligen Benutzer aus der Datenbank geladen werden. SSR bringt hier also keinen nennenswerten Geschwindigkeitsvorteil bei der ersten Darstellung.
+ Da der Habit-Tracker eine rein persönliche, interaktive Anwendung ist, bei der Benutzer erst eingeloggt sein müssen, um ihre Gewohnheiten einzusehen und zu pflegen, ist serverseitig gerendertes HTML für nicht-eingeloggte Besucher unnötig. Nach dem Login müssen die Daten ohnehin dynamisch für den jeweiligen Benutzer aus der Datenbank geladen werden. SSR bringt hier also keinen nennenswerten Geschwindigkeitsvorteil bei der ersten Darstellung.
 - **Warum SEO keine Rolle spielt**:
   Ein Habit-Tracker ist ein geschütztes, persönliches Dashboard. Suchmaschinen-Crawler sollen und können keinen Zugriff auf die privaten Daten und Dashboards der Nutzer haben. Daher ist Suchmaschinenoptimierung (SEO) für diese Art von Anwendung völlig irrelevant.
 - **Warum Vite für ein interaktives Dashboard die bessere Wahl ist**:

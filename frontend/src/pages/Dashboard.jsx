@@ -1,19 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import { authAPI, habitAPI } from '../services/api.js'
+import { socket } from '../services/socket.js'
+import HabitCalendar from '../components/HabitCalendar.jsx'
+import HabitCards from '../components/HabitCards.jsx'
 import RealtimeUpdates from '../components/RealtimeUpdates.jsx'
+import Sidebar from '../components/Sidebar.jsx'
 
 function Dashboard({ onLogout }) {
   const [habits, setHabits] = useState([
-    { id: 1, name: 'Drink 8 glasses of water', category: 'Health & Fitness', streak: 0, completedCount: 3, total: 8, isChecked: false },
-    { id: 2, name: 'Digital detox hour', category: 'Wellness', streak: 0, completedCount: 0, total: 0, isChecked: false }
+    { id: 1, name: 'Drink 8 glasses of water', category: 'Health & Fitness', streak: 0, completedCount: 3, total: 8, isChecked: false, timeRange: 'Morgen' },
+    { id: 2, name: 'Digital detox hour', category: 'Wellness', streak: 0, completedCount: 0, total: 0, isChecked: false, timeRange: 'Abend' },
   ])
-  const [currentView, setCurrentView] = useState('daily')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [newHabitInput, setNewHabitInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
-  const [showSettings, setShowSettings] = useState(false)
   const [currentPage, setCurrentPage] = useState('dashboard')
+  const [activeSection, setActiveSection] = useState('all')
+  const [selectedHabitId, setSelectedHabitId] = useState(1)
   const initialProfile = {
     firstName: 'Nina',
     lastName: 'Doe',
@@ -42,6 +46,17 @@ function Dashboard({ onLogout }) {
     return () => clearTimeout(timer)
   }, [showNotification])
 
+  useEffect(() => {
+    if (habits.length === 0) {
+      setSelectedHabitId(null)
+      return
+    }
+
+    if (!habits.some((habit) => habit.id === selectedHabitId)) {
+      setSelectedHabitId(habits[0].id)
+    }
+  }, [habits, selectedHabitId])
+
   const handleRealtimeHabit = useCallback((payload) => {
     const newHabit = {
       id: payload.id,
@@ -51,6 +66,7 @@ function Dashboard({ onLogout }) {
       completedCount: 0,
       total: 0,
       isChecked: false,
+      timeRange: payload.timeRange || 'Morgen',
     }
 
     setHabits((prevHabits) =>
@@ -62,21 +78,17 @@ function Dashboard({ onLogout }) {
     setShowNotification(true)
   }, [])
 
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => !prev)
-  }
-
   const resetProfileDraft = () => {
     setProfile(savedProfile)
   }
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault()
+  const handleSaveProfile = (event) => {
+    event.preventDefault()
     setSavedProfile({ ...profile, confirmPassword: '' })
     setProfile({ ...profile, confirmPassword: '' })
 
     if (profile.email !== lastSavedEmail) {
-      setNotification(`Eine Bestätigungsemail wurde an ${profile.email} gesendet.`)
+      setNotification(`Eine Bestaetigungsemail wurde an ${profile.email} gesendet.`)
       setShowNotification(true)
       setLastSavedEmail(profile.email)
     }
@@ -96,7 +108,6 @@ function Dashboard({ onLogout }) {
       console.error('Logout failed', error)
     } finally {
       onLogout()
-      setShowSettings(false)
     }
   }
 
@@ -130,16 +141,17 @@ function Dashboard({ onLogout }) {
       })
 
       const newHabit = response.data
-      setHabits((prevHabits) => [
-        ...prevHabits,
-        {
-          ...newHabit,
-          streak: 0,
-          completedCount: 0,
-          total: 0,
-          isChecked: false,
-        },
-      ])
+      const normalizedHabit = {
+        ...newHabit,
+        streak: 0,
+        completedCount: 0,
+        total: 0,
+        isChecked: false,
+        timeRange: newHabit.timeRange || 'Morgen',
+      }
+
+      setHabits((prevHabits) => [...prevHabits, normalizedHabit])
+      setSelectedHabitId(normalizedHabit.id)
       socket.emit('new-task', {
         id: newHabit.id,
         name: newHabit.name,
@@ -148,7 +160,7 @@ function Dashboard({ onLogout }) {
       setNewHabitInput('')
     } catch (error) {
       console.error('Fehler beim Erstellen der Habit:', error)
-      const newHabit = {
+      const fallbackHabit = {
         id: Date.now(),
         name: newHabitInput,
         category: 'General',
@@ -156,23 +168,26 @@ function Dashboard({ onLogout }) {
         completedCount: 0,
         total: 0,
         isChecked: false,
+        timeRange: 'Morgen',
       }
-      setHabits((prevHabits) => [...prevHabits, newHabit])
+      setHabits((prevHabits) => [...prevHabits, fallbackHabit])
+      setSelectedHabitId(fallbackHabit.id)
       setNewHabitInput('')
     }
   }
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
       addHabit()
     }
   }
 
   const deleteHabit = (id) => {
-    setHabits(habits.filter((habit) => habit.id !== id))
+    setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== id))
   }
 
   const handleEditHabit = (habit) => {
+    setSelectedHabitId(habit.id)
     setEditingHabitId(habit.id)
     setEditedHabitName(habit.name)
   }
@@ -182,17 +197,38 @@ function Dashboard({ onLogout }) {
       alert('Habit name cannot be empty')
       return
     }
-    setHabits(habits.map((habit) => (habit.id === id ? { ...habit, name: editedHabitName } : habit)))
+    setHabits((prevHabits) => prevHabits.map((habit) => (habit.id === id ? { ...habit, name: editedHabitName } : habit)))
     setEditingHabitId(null)
     setEditedHabitName('')
   }
 
   const handleCancelEdit = () => {
     setEditingHabitId(null)
+    setEditedHabitName('')
+  }
+
+  const handleUpdateHabit = (id, updates) => {
+    setHabits((prevHabits) =>
+      prevHabits.map((habit) => (habit.id === id ? { ...habit, ...updates } : habit)),
+    )
   }
 
   const handleToggleCheckbox = (id) => {
-    setHabits(habits.map((habit) => (habit.id === id ? { ...habit, isChecked: !habit.isChecked } : habit)))
+    setSelectedHabitId(id)
+    setHabits((prevHabits) =>
+      prevHabits.map((habit) => {
+        if (habit.id !== id) return habit
+        const nextChecked = !habit.isChecked
+        const nextCompletedCount = Math.max(0, habit.completedCount + (nextChecked ? 1 : -1))
+
+        return {
+          ...habit,
+          isChecked: nextChecked,
+          completedCount: habit.total > 0 ? Math.min(habit.total, nextCompletedCount) : nextCompletedCount,
+          streak: nextChecked ? habit.streak + 1 : Math.max(0, habit.streak - 1),
+        }
+      }),
+    )
   }
 
   const addSuggestedHabit = (suggestion) => {
@@ -204,43 +240,12 @@ function Dashboard({ onLogout }) {
       completedCount: 0,
       total: 0,
       isChecked: false,
+      timeRange: suggestion.timeRange || 'Morgen',
     }
 
-    setHabits([...habits, newHabit])
+    setHabits((prevHabits) => [...prevHabits, newHabit])
+    setSelectedHabitId(newHabit.id)
     setShowSuggestions(false)
-  }
-
-  const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (date) => {
-    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-    return (day + 6) % 7
-  }
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDay = getFirstDayOfMonth(currentDate)
-    const days = []
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>)
-    }
-
-    for (let i = 1; i <= daysInMonth; i++) {
-      const isToday =
-        i === new Date().getDate() &&
-        currentDate.getMonth() === new Date().getMonth() &&
-        currentDate.getFullYear() === new Date().getFullYear()
-      days.push(
-        <div key={i} className={`calendar-day ${isToday ? 'today' : ''}`}>
-          {i}
-        </div>,
-      )
-    }
-
-    return days
   }
 
   const prevMonth = () => {
@@ -251,20 +256,31 @@ function Dashboard({ onLogout }) {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))
   }
 
+  const visibleHabits = activeSection === 'all'
+    ? habits
+    : ['Morgen', 'Nachmittag', 'Abend'].includes(activeSection)
+      ? habits.filter((habit) => habit.timeRange === activeSection)
+      : habits
+  const selectedHabit = visibleHabits.find((habit) => habit.id === selectedHabitId) || visibleHabits[0] || habits[0]
+  const completedDays = selectedHabit ? buildCompletedDays(selectedHabit, currentDate) : []
+  const completedToday = habits.filter((habit) => habit.isChecked).length
+  const totalStreaks = habits.reduce((sum, habit) => sum + habit.streak, 0)
+
   if (currentPage === 'profile') {
     return (
       <div className="app-container profile-page">
         <div className="profile-header">
-          <button className="back-btn" onClick={handleCancelProfile}>← Zurück</button>
+          <button className="back-btn" onClick={handleCancelProfile}>Zurueck</button>
           <div>
+            <p className="eyebrow">Account</p>
             <h1>Profil bearbeiten</h1>
           </div>
         </div>
 
         <div className="profile-card">
           <p className="profile-description">
-            Passe hier deinen Namen, Sprache, E-Mail und Passwort an. Aktiviere zusätzlich die Zwei-Faktor-Authentifizierung,
-            um dein Konto für zukünftige Logins extra zu schützen.
+            Passe hier deinen Namen, Sprache, E-Mail und Passwort an. Aktiviere zusaetzlich die Zwei-Faktor-Authentifizierung,
+            um dein Konto fuer zukuenftige Logins extra zu schuetzen.
           </p>
 
           <form className="profile-form" onSubmit={handleSaveProfile}>
@@ -275,7 +291,7 @@ function Dashboard({ onLogout }) {
                   id="firstName"
                   className="form-input"
                   value={profile.firstName}
-                  onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                  onChange={(event) => setProfile({ ...profile, firstName: event.target.value })}
                 />
               </div>
               <div className="name-field">
@@ -284,7 +300,7 @@ function Dashboard({ onLogout }) {
                   id="lastName"
                   className="form-input"
                   value={profile.lastName}
-                  onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                  onChange={(event) => setProfile({ ...profile, lastName: event.target.value })}
                 />
               </div>
             </div>
@@ -296,7 +312,7 @@ function Dashboard({ onLogout }) {
                 type="email"
                 className="form-input"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                onChange={(event) => setProfile({ ...profile, email: event.target.value })}
               />
             </div>
 
@@ -306,11 +322,11 @@ function Dashboard({ onLogout }) {
                 id="language"
                 className="form-input"
                 value={profile.language}
-                onChange={(e) => setProfile({ ...profile, language: e.target.value })}
+                onChange={(event) => setProfile({ ...profile, language: event.target.value })}
               >
                 <option>Deutsch</option>
                 <option>English</option>
-                <option>Français</option>
+                <option>Francais</option>
               </select>
             </div>
 
@@ -322,32 +338,47 @@ function Dashboard({ onLogout }) {
                 className="form-input"
                 placeholder="Neues Passwort eingeben"
                 value={profile.password}
-                onChange={(e) => setProfile({ ...profile, password: e.target.value })}
+                onChange={(event) => setProfile({ ...profile, password: event.target.value })}
               />
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="confirmPassword">Neues Passwort bestätigen</label>
+              <label className="form-label" htmlFor="confirmPassword">Neues Passwort bestaetigen</label>
               <input
                 id="confirmPassword"
                 type="password"
                 className="form-input"
                 placeholder="Passwort erneut eingeben"
                 value={profile.confirmPassword}
-                onChange={(e) => setProfile({ ...profile, confirmPassword: e.target.value })}
+                onChange={(event) => setProfile({ ...profile, confirmPassword: event.target.value })}
               />
             </div>
 
             <div className="form-field toggle-row">
               <div>
                 <label className="form-label">Zwei-Faktor-Authentifizierung</label>
-                <p className="toggle-description">Schütze dein Konto zusätzlich für zukünftige Logins.</p>
+                <p className="toggle-description">Schuetze dein Konto zusaetzlich fuer zukuenftige Logins.</p>
               </div>
               <label className="toggle-switch">
                 <input
                   type="checkbox"
                   checked={profile.twoFactor}
-                  onChange={(e) => setProfile({ ...profile, twoFactor: e.target.checked })}
+                  onChange={(event) => setProfile({ ...profile, twoFactor: event.target.checked })}
+                />
+                <span className="slider" />
+              </label>
+            </div>
+
+            <div className="form-field toggle-row profile-subsetting">
+              <div>
+                <label className="form-label">Benachrichtigungen</label>
+                <p className="toggle-description">Erhalte Hinweise, wenn neue Gewohnheiten oder Updates eintreffen.</p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={notificationsEnabled}
+                  onChange={(event) => setNotificationsEnabled(event.target.checked)}
                 />
                 <span className="slider" />
               </label>
@@ -366,218 +397,123 @@ function Dashboard({ onLogout }) {
   return (
     <>
       <RealtimeUpdates onNewHabit={handleRealtimeHabit} />
-      <div className="app-container">
-      {showNotification && (
-        <div className="notification-popup" role="status">
-          {notification}
-        </div>
-      )}
-      <header className="header">
-        <div className="header-left">
-          <svg className="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <line x1="20" y1="20" x2="20" y2="80" stroke="#06b6d4" strokeWidth="7" strokeLinecap="round" />
-            <path d="M 20 20 Q 60 20 60 50 Q 60 80 20 80" fill="none" stroke="#06b6d4" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-            <polyline points="32,50 45,63 75,30" fill="none" stroke="#06b6d4" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <h1>Daily Habits</h1>
-        </div>
-        <div className="header-right">
-          <div className="mode-switch">
-            <span className="mode-label">{darkMode ? 'Dark' : 'Light'}</span>
-            <label className="dark-switch">
-              <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
-              <span className="slider" />
-            </label>
+      <div className="app-shell">
+        {showNotification && notificationsEnabled && (
+          <div className="notification-popup" role="status">
+            {notification}
+          </div>
+        )}
+
+        <Sidebar
+          profile={profile}
+          avatarInitials={getAvatarInitials()}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode((prev) => !prev)}
+          onOpenProfile={() => {
+            resetProfileDraft()
+            setCurrentPage('profile')
+          }}
+          onLogout={handleLogout}
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+
+        <main className="main-panel">
+          <div className="main-header">
+            <div>
+              <p className="eyebrow">Daily Habits</p>
+              <h1>{activeSection === 'all' || activeSection === 'resources' ? 'Alle Habits' : activeSection}</h1>
+            </div>
+            <div className="header-metrics">
+              <div>
+                <span>Heute</span>
+                <strong>{completedToday}/{habits.length}</strong>
+              </div>
+              <div>
+                <span>Streaks</span>
+                <strong>{totalStreaks}</strong>
+              </div>
+            </div>
           </div>
 
-          <button className="avatar-btn" aria-label="Profil" onClick={() => setShowSettings(!showSettings)}>
-            <span>{getAvatarInitials()}</span>
-          </button>
-
-          {showSettings && (
-            <div className="settings-menu">
-              <button
-                className="settings-menu-item"
-                onClick={() => {
-                  resetProfileDraft()
-                  setCurrentPage('profile')
-                  setShowSettings(false)
-                }}
-              >
-                Profil bearbeiten
-              </button>
-              <div className="settings-menu-item notifications-toggle">
-                <span>Benachrichtigungen</span>
-                <label className="notifications-switch">
-                  <input
-                    type="checkbox"
-                    checked={notificationsEnabled}
-                    onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                  />
-                  <span className="slider" />
-                </label>
-              </div>
-              <button className="settings-menu-item" onClick={handleLogout}>Abmelden</button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <div className="tabs">
-        <button className={`tab ${currentView === 'daily' ? 'active' : ''}`} onClick={() => setCurrentView('daily')}>Tagesansicht</button>
-        <button className={`tab ${currentView === 'calendar' ? 'active' : ''}`} onClick={() => setCurrentView('calendar')}>Kalenderansicht</button>
-      </div>
-
-      <div className={`views-container ${currentView === 'calendar' ? 'show-calendar' : ''}`}>
-        <div className="daily-view">
-          <div className="input-section">
+          <section className="composer-panel" aria-label="Habit erstellen">
             <input
+              id="new-habit-input"
               type="text"
               placeholder="Enter a new habit..."
               className="habit-input"
               data-cy="new-habit-input"
               value={newHabitInput}
-              onChange={(e) => setNewHabitInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={(event) => setNewHabitInput(event.target.value)}
+              onKeyDown={handleKeyPress}
             />
-            <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit}>+</button>
-            <button className="browse-btn" onClick={() => setShowSuggestions(!showSuggestions)}>Browse</button>
-          </div>
+            <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit} type="button">+</button>
+            <button className="browse-btn" onClick={() => setShowSuggestions((prev) => !prev)} type="button">Browse</button>
+          </section>
 
           {showSuggestions && (
-            <div className="suggestions-modal">
-              <div className="suggestions-header">
-                <h3>Suggested Habits</h3>
-                <button className="close-btn" onClick={() => setShowSuggestions(false)}>✕</button>
-              </div>
-              <div className="suggestions-list">
-                {suggestedHabits.map((suggestion, index) => (
-                  <div key={index} className="suggestion-item" onClick={() => addSuggestedHabit(suggestion)}>
-                    <div className="suggestion-content">
-                      <p className="suggestion-name">{suggestion.name}</p>
-                      <span className="suggestion-category">{suggestion.category}</span>
-                    </div>
-                    <span className="add-icon">+</span>
-                  </div>
-                ))}
+            <div className="suggestions-modal" role="dialog" aria-modal="true">
+              <div className="suggestions-card">
+                <div className="suggestions-header">
+                  <h3>Suggested Habits</h3>
+                  <button className="close-btn" onClick={() => setShowSuggestions(false)} type="button">x</button>
+                </div>
+                <div className="suggestions-list">
+                  {suggestedHabits.map((suggestion, index) => (
+                    <button key={index} className="suggestion-item" onClick={() => addSuggestedHabit(suggestion)} type="button">
+                      <span>
+                        <strong>{suggestion.name}</strong>
+                        <small>{suggestion.category}</small>
+                      </span>
+                      <b>+</b>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="habits-list">
-            {habits.map((habit) => (
-              <div key={habit.id} className="habit-card" data-cy={`habit-${habit.id}`}>
-                <div className="habit-left">
-                  <button
-                    className="checkbox"
-                    style={{ background: habit.isChecked ? '#06b6d4' : 'transparent' }}
-                    onClick={() => handleToggleCheckbox(habit.id)}
-                    aria-label="Mark as complete"
-                  >
-                    {habit.isChecked && '✓'}
-                  </button>
-                  {habit.total > 0 && <span className="progress">{habit.completedCount}/{habit.total}</span>}
-                </div>
-                <div className="habit-content">
-                  {editingHabitId === habit.id ? (
-                    <input
-                      type="text"
-                      className="edit-habit-input"
-                      value={editedHabitName}
-                      onChange={(e) => setEditedHabitName(e.target.value)}
-                      autoFocus
-                    />
-                  ) : (
-                    <>
-                      <h3 data-cy="habit-name" style={{ color: habit.completed ? '#06b6d4' : 'white' }}>{habit.name}</h3>
-                      <div className="habit-meta">
-                        <span>Streak: {habit.streak} days</span>
-                        <span className="category">{habit.category}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="habit-actions">
-                  {editingHabitId === habit.id ? (
-                    <>
-                      <button className="save-btn" onClick={() => handleSaveHabit(habit.id)} title="Speichern">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <polyline points="16 3 20 7 9 18" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                      <button className="cancel-btn" onClick={handleCancelEdit} title="Abbrechen">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <circle cx="12" cy="12" r="10" stroke="#e2e8f0" strokeWidth="2" />
-                          <path d="M8 12h8M12 8v8" stroke="#e2e8f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="edit-btn" onClick={() => handleEditHabit(habit)} aria-label="Bearbeiten">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M4 19.5C4 20.3284 4.67157 21 5.5 21H18.5C19.3284 21 20 20.3284 20 19.5V7.5C20 6.67157 19.3284 6 18.5 6H15.5L14 4.5H5.5C4.67157 4.5 4 5.17157 4 6V19.5Z" stroke="#e2e8f0" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M8.5 15.5L15 9L16.5 10.5L10 17L8.5 17.5L8.5 15.5Z" fill="#e2e8f0" />
-                          <path d="M15.25 8.75L16.25 9.75" stroke="#e2e8f0" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                      <button className="delete-btn" aria-label="Löschen" onClick={() => deleteHabit(habit.id)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M6 7H18" stroke="#e2e8f0" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M9 7V5.5C9 4.67157 9.67157 4 10.5 4H13.5C14.3284 4 15 4.67157 15 5.5V7" stroke="#e2e8f0" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M7 7L7.5 19.5C7.5 20.3284 8.17157 21 9 21H15C15.8284 21 16.5 20.3284 16.5 19.5L17 7" stroke="#e2e8f0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M10 11V17" stroke="#e2e8f0" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M14 11V17" stroke="#e2e8f0" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <HabitCards
+            habits={visibleHabits}
+            selectedHabitId={selectedHabit?.id}
+            onSelectHabit={setSelectedHabitId}
+            onToggleHabit={handleToggleCheckbox}
+            onDeleteHabit={deleteHabit}
+            onUpdateHabit={handleUpdateHabit}
+          />
+        </main>
 
-          <section className="summary">
-            <h2>Progress Summary</h2>
-            <div className="summary-grid">
-              <div className="summary-card">
-                <p className="label">Completed Today</p>
-                <p className="value">1/2</p>
-              </div>
-              <div className="summary-card">
-                <p className="label">Total Streaks</p>
-                <p className="value">0</p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="calendar-view">
-          <div className="calendar-header">
-            <button className="month-nav" onClick={prevMonth}>←</button>
-            <h2 className="month-title">
-              {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-            </h2>
-            <button className="month-nav" onClick={nextMonth}>→</button>
-          </div>
-
-          <div className="calendar-weekdays">
-            <div className="weekday">Mo</div>
-            <div className="weekday">Di</div>
-            <div className="weekday">Mi</div>
-            <div className="weekday">Do</div>
-            <div className="weekday">Fr</div>
-            <div className="weekday">Sa</div>
-            <div className="weekday">So</div>
-          </div>
-
-          <div className="calendar-grid">{renderCalendar()}</div>
-        </div>
+        <HabitCalendar
+          habit={selectedHabit}
+          currentDate={currentDate}
+          completedDays={completedDays}
+          onPrevMonth={prevMonth}
+          onNextMonth={nextMonth}
+        />
       </div>
-    </div>
     </>
   )
+}
+
+function buildCompletedDays(habit, date) {
+  const today = new Date()
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  const count = Math.min(daysInMonth, Math.max(0, habit.completedCount || 0))
+  const days = new Set()
+
+  for (let index = 0; index < count; index += 1) {
+    days.add(((habit.id + index * 3) % daysInMonth) + 1)
+  }
+
+  if (
+    habit.isChecked &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  ) {
+    days.add(today.getDate())
+  }
+
+  return Array.from(days)
 }
 
 export default Dashboard

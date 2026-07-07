@@ -29,12 +29,21 @@ export const createHabit = async (data, userId) => {
     throw new ValidationError('Name ist zu lang (max. 255 Zeichen).');
   }
 
+  const habitData = {
+    name: data.name,
+    ...(data.category !== undefined ? { category: data.category || null } : {}),
+    ...(data.targetPerDay !== undefined || data.total !== undefined || data.dailyGoal !== undefined
+      ? { targetPerDay: data.targetPerDay ?? data.total ?? data.dailyGoal ?? null }
+      : {}),
+    ...(data.reminder !== undefined ? { reminder: Boolean(data.reminder) } : {}),
+    ...(data.timeOfDay !== undefined || data.timeRange !== undefined
+      ? { timeOfDay: data.timeOfDay ?? data.timeRange ?? null }
+      : {}),
+    userId,
+  };
+
   const habit = await prisma.habit.create({
-    data: {
-      name: data.name,
-      category: data.category || null,
-      userId
-    }
+    data: habitData,
   });
   
   // Side-Effects gekapselt im Service
@@ -55,12 +64,21 @@ export const updateHabit = async (id, data, userId) => {
     throw new ValidationError('Name ist zu lang (max. 255 Zeichen).');
   }
 
+  const updatedFields = {
+    name: data.name,
+    ...(data.category !== undefined ? { category: data.category || null } : {}),
+    ...(data.targetPerDay !== undefined || data.total !== undefined || data.dailyGoal !== undefined
+      ? { targetPerDay: data.targetPerDay ?? data.total ?? data.dailyGoal ?? null }
+      : {}),
+    ...(data.reminder !== undefined ? { reminder: Boolean(data.reminder) } : {}),
+    ...(data.timeOfDay !== undefined || data.timeRange !== undefined
+      ? { timeOfDay: data.timeOfDay ?? data.timeRange ?? null }
+      : {}),
+  };
+
   return await prisma.habit.update({
     where: { id },
-    data: {
-      name: data.name,
-      category: data.category || null
-    },
+    data: updatedFields,
     include: { entries: true }
   });
 };

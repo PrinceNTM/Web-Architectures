@@ -5,12 +5,11 @@ import HabitCalendar from '../components/HabitCalendar.jsx'
 import HabitCards from '../components/HabitCards.jsx'
 import RealtimeUpdates from '../components/RealtimeUpdates.jsx'
 import Sidebar from '../components/Sidebar.jsx'
+import { normalizeUser, readStoredUser, writeStoredUser } from '../utils/profileStorage.js'
+import { buildHabitUpdatePayload, normalizeHabits, readStoredHabits, writeStoredHabits } from '../utils/habitStorage.js'
 
-function Dashboard({ onLogout }) {
-  const [habits, setHabits] = useState([
-    { id: 1, name: 'Drink 8 glasses of water', category: 'Health & Fitness', streak: 0, completedCount: 3, total: 8, isChecked: false, timeRange: 'Morgen' },
-    { id: 2, name: 'Digital detox hour', category: 'Wellness', streak: 0, completedCount: 0, total: 0, isChecked: false, timeRange: 'Abend' },
-  ])
+function Dashboard({ onLogout, user, onUserChange }) {
+  const [habits, setHabits] = useState(() => readStoredHabits())
   const [currentDate, setCurrentDate] = useState(new Date())
   const [newHabitInput, setNewHabitInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -19,10 +18,10 @@ function Dashboard({ onLogout }) {
   const [activeSection, setActiveSection] = useState('all')
   const [selectedHabitId, setSelectedHabitId] = useState(1)
   const initialProfile = {
-    firstName: 'Nina',
-    lastName: 'Doe',
+    firstName: '',
+    lastName: '',
     language: 'Deutsch',
-    email: 'nina@example.com',
+    email: '',
     password: '',
     confirmPassword: '',
     twoFactor: false,
@@ -41,10 +40,89 @@ function Dashboard({ onLogout }) {
   }, [darkMode])
 
   useEffect(() => {
+    const storedProfile = readStoredUser()
+    const sourceProfile = normalizeUser(user || storedProfile || {})
+    if (sourceProfile.email || sourceProfile.firstName || sourceProfile.lastName) {
+      const hydratedProfile = {
+        ...initialProfile,
+        ...sourceProfile,
+        password: '',
+        confirmPassword: '',
+      }
+      setSavedProfile(hydratedProfile)
+      setProfile(hydratedProfile)
+      setLastSavedEmail(hydratedProfile.email)
+    }
+  }, [user])
+
+  useEffect(() => {
     if (!showNotification) return
     const timer = setTimeout(() => setShowNotification(false), 4200)
     return () => clearTimeout(timer)
   }, [showNotification])
+
+  useEffect(() => {
+    const resetDailyCheckins = async () => {
+      if (!user?.id) return
+      const today = new Date().toISOString().split('T')[0]
+      const lastResetDate = window.localStorage.getItem('habit-tracker-last-reset-date')
+      if (lastResetDate === today) return
+
+      try {
+        await habitAPI.resetCheckins(today)
+        const refreshed = await Promise.all(habits.map(async (habit) => {
+          const checkins = await habitAPI.getCheckins(habit.id)
+          return {
+            ...habit,
+            checkinDates: checkins.data.map((entry) => entry.date),
+            isChecked: false,
+          }
+        }))
+        setHabits(refreshed)
+        writeStoredHabits(refreshed)
+      } catch (error) {
+        console.error('Reset der Check-ins fehlgeschlagen', error)
+      } finally {
+        window.localStorage.setItem('habit-tracker-last-reset-date', today)
+      }
+    }
+
+    resetDailyCheckins()
+  }, [user, habits])
+
+  useEffect(() => {
+    const loadHabits = async () => {
+      if (!user?.id) return
+      try {
+        const response = await habitAPI.getAll()
+        const nextHabits = normalizeHabits(response.data)
+        const hydratedHabits = await Promise.all(nextHabits.map(async (habit) => {
+          try {
+            const checkinsResponse = await habitAPI.getCheckins(habit.id)
+            const checkinDates = checkinsResponse.data.map((entry) => entry.date)
+            const today = new Date().toISOString().split('T')[0]
+            return {
+              ...habit,
+              checkinDates,
+              isChecked: checkinDates.includes(today),
+            }
+          } catch (error) {
+            return habit
+          }
+        }))
+        setHabits(hydratedHabits)
+        writeStoredHabits(hydratedHabits)
+      } catch (error) {
+        console.error('Habits konnten nicht geladen werden', error)
+        const fallbackHabits = readStoredHabits()
+        if (fallbackHabits.length > 0) {
+          setHabits(fallbackHabits)
+        }
+      }
+    }
+
+    loadHabits()
+  }, [user])
 
   useEffect(() => {
     if (habits.length === 0) {
@@ -82,18 +160,46 @@ function Dashboard({ onLogout }) {
     setProfile(savedProfile)
   }
 
-  const handleSaveProfile = (event) => {
+  const handleSaveProfile = async (event) => {
     event.preventDefault()
-    setSavedProfile({ ...profile, confirmPassword: '' })
-    setProfile({ ...profile, confirmPassword: '' })
 
-    if (profile.email !== lastSavedEmail) {
-      setNotification(`Eine Bestaetigungsemail wurde an ${profile.email} gesendet.`)
-      setShowNotification(true)
-      setLastSavedEmail(profile.email)
+    const nextProfile = {
+      ...profile,
+      password: '',
+      confirmPassword: '',
     }
 
-    setCurrentPage('dashboard')
+    try {
+      const response = await authAPI.updateProfile({
+        firstName: nextProfile.firstName,
+        lastName: nextProfile.lastName,
+        email: nextProfile.email,
+        language: nextProfile.language,
+      })
+
+      const persistedUser = normalizeUser(response.data)
+      writeStoredUser(persistedUser)
+      onUserChange?.(persistedUser)
+      setSavedProfile({ ...nextProfile, ...persistedUser })
+      setProfile({ ...nextProfile, ...persistedUser })
+      setLastSavedEmail(persistedUser.email)
+
+      if (persistedUser.email !== lastSavedEmail) {
+        setNotification(`Eine Bestaetigungsemail wurde an ${persistedUser.email} gesendet.`)
+        setShowNotification(true)
+      }
+    } catch (error) {
+      console.error('Profil konnte nicht gespeichert werden', error)
+      const fallbackUser = normalizeUser({ ...savedProfile, ...profile, email: profile.email, firstName: profile.firstName, lastName: profile.lastName, language: profile.language })
+      writeStoredUser(fallbackUser)
+      onUserChange?.(fallbackUser)
+      setSavedProfile({ ...nextProfile, ...fallbackUser })
+      setProfile({ ...nextProfile, ...fallbackUser })
+      setNotification('Profil konnte nicht gespeichert werden. Die Änderungen wurden lokal gesichert.')
+      setShowNotification(true)
+    } finally {
+      setCurrentPage('dashboard')
+    }
   }
 
   const handleCancelProfile = () => {
@@ -112,8 +218,8 @@ function Dashboard({ onLogout }) {
   }
 
   const getAvatarInitials = () => {
-    const first = profile.firstName?.trim()?.[0] ?? ''
-    const last = profile.lastName?.trim()?.[0] ?? ''
+    const first = (profile.firstName || savedProfile.firstName)?.trim()?.[0] ?? ''
+    const last = (profile.lastName || savedProfile.lastName)?.trim()?.[0] ?? ''
     const initials = `${first}${last}`.toUpperCase()
     return initials || 'ND'
   }
@@ -141,16 +247,11 @@ function Dashboard({ onLogout }) {
       })
 
       const newHabit = response.data
-      const normalizedHabit = {
-        ...newHabit,
-        streak: 0,
-        completedCount: 0,
-        total: 0,
-        isChecked: false,
-        timeRange: newHabit.timeRange || 'Morgen',
-      }
+      const normalizedHabit = normalizeHabits([newHabit])[0]
+      const nextHabits = [...habits, normalizedHabit]
 
-      setHabits((prevHabits) => [...prevHabits, normalizedHabit])
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
       setSelectedHabitId(normalizedHabit.id)
       socket.emit('new-task', {
         id: newHabit.id,
@@ -170,7 +271,9 @@ function Dashboard({ onLogout }) {
         isChecked: false,
         timeRange: 'Morgen',
       }
-      setHabits((prevHabits) => [...prevHabits, fallbackHabit])
+      const nextHabits = [...habits, fallbackHabit]
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
       setSelectedHabitId(fallbackHabit.id)
       setNewHabitInput('')
     }
@@ -182,8 +285,15 @@ function Dashboard({ onLogout }) {
     }
   }
 
-  const deleteHabit = (id) => {
-    setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== id))
+  const deleteHabit = async (id) => {
+    try {
+      await habitAPI.delete(id)
+      const nextHabits = habits.filter((habit) => habit.id !== id)
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
+    } catch (error) {
+      console.error('Habit konnte nicht gelöscht werden', error)
+    }
   }
 
   const handleEditHabit = (habit) => {
@@ -207,45 +317,76 @@ function Dashboard({ onLogout }) {
     setEditedHabitName('')
   }
 
-  const handleUpdateHabit = (id, updates) => {
-    setHabits((prevHabits) =>
-      prevHabits.map((habit) => (habit.id === id ? { ...habit, ...updates } : habit)),
-    )
-  }
-
-  const handleToggleCheckbox = (id) => {
-    setSelectedHabitId(id)
-    setHabits((prevHabits) =>
-      prevHabits.map((habit) => {
-        if (habit.id !== id) return habit
-        const nextChecked = !habit.isChecked
-        const nextCompletedCount = Math.max(0, habit.completedCount + (nextChecked ? 1 : -1))
-
-        return {
-          ...habit,
-          isChecked: nextChecked,
-          completedCount: habit.total > 0 ? Math.min(habit.total, nextCompletedCount) : nextCompletedCount,
-          streak: nextChecked ? habit.streak + 1 : Math.max(0, habit.streak - 1),
-        }
-      }),
-    )
-  }
-
-  const addSuggestedHabit = (suggestion) => {
-    const newHabit = {
-      id: Date.now(),
-      name: suggestion.name,
-      category: suggestion.category,
-      streak: 0,
-      completedCount: 0,
-      total: 0,
-      isChecked: false,
-      timeRange: suggestion.timeRange || 'Morgen',
+  const handleUpdateHabit = async (id, updates) => {
+    try {
+      const payload = buildHabitUpdatePayload(updates)
+      const response = await habitAPI.update(id, payload)
+      const updatedHabit = normalizeHabits([response.data])[0]
+      const nextHabits = habits.map((habit) => (habit.id === id ? updatedHabit : habit))
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
+      setSelectedHabitId(id)
+    } catch (error) {
+      console.error('Habit konnte nicht aktualisiert werden', error)
     }
+  }
 
-    setHabits((prevHabits) => [...prevHabits, newHabit])
-    setSelectedHabitId(newHabit.id)
-    setShowSuggestions(false)
+  const handleToggleCheckbox = async (id) => {
+    const habit = habits.find((entry) => entry.id === id)
+    if (!habit) return
+
+    const today = new Date().toISOString().split('T')[0]
+    const nextChecked = !habit.isChecked
+
+    try {
+      if (nextChecked) {
+        await habitAPI.checkOff(id, today)
+      } else {
+        await habitAPI.uncheck(id, today)
+      }
+
+      const refreshed = await habitAPI.getCheckins(id)
+      const checkinDates = new Set(refreshed.data.map((entry) => entry.date))
+
+      const nextHabits = habits.map((entry) => {
+        if (entry.id !== id) return entry
+        const isCheckedToday = checkinDates.has(today)
+        return {
+          ...entry,
+          isChecked: isCheckedToday,
+          completedCount: isCheckedToday ? Math.max(entry.completedCount, 1) : Math.max(0, entry.completedCount - 1),
+          streak: entry.streak,
+          checkinDates: Array.from(checkinDates),
+        }
+      })
+
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
+      setSelectedHabitId(id)
+    } catch (error) {
+      console.error('Check-in konnte nicht gespeichert werden', error)
+    }
+  }
+
+  const addSuggestedHabit = async (suggestion) => {
+    try {
+      const response = await habitAPI.create({
+        name: suggestion.name,
+        category: suggestion.category,
+        targetPerDay: 1,
+        reminder: false,
+        timeOfDay: suggestion.timeRange || 'Morgen',
+      })
+
+      const createdHabit = normalizeHabits([response.data])[0]
+      const nextHabits = [...habits, createdHabit]
+      setHabits(nextHabits)
+      writeStoredHabits(nextHabits)
+      setSelectedHabitId(createdHabit.id)
+      setShowSuggestions(false)
+    } catch (error) {
+      console.error('Vorgeschlagenes Habit konnte nicht gespeichert werden', error)
+    }
   }
 
   const prevMonth = () => {

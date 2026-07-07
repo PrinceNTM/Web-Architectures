@@ -36,10 +36,9 @@ function HabitCards({
     onUpdateHabit(habitId, {
       name: draftHabit.name.trim(),
       category: draftHabit.category,
-      dailyGoal: draftHabit.dailyGoal,
-      total: Number(draftHabit.dailyGoal) || 0,
+      targetPerDay: Number(draftHabit.dailyGoal) || 0,
       reminder: draftHabit.reminder,
-      timeRange: draftHabit.timeRange,
+      timeOfDay: draftHabit.timeRange,
     })
     closeHabitSettings()
   }

@@ -8,6 +8,7 @@ import { dirname } from 'path'
 import prisma from './prisma.js'
 import authRoutes from './routes/auth.js'
 import habitRoutes from './routes/habits.js'
+import userRoutes from './routes/user.js'
 import { initializeSocket } from './realtime/socket.js'
 import { startEmailQueueWorker } from './emails/emailQueue.js'
 
@@ -38,6 +39,7 @@ app.use(express.json())
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/habits', habitRoutes)
+app.use('/api/user', userRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

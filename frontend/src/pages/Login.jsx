@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../services/api.js'
+import { normalizeUser, writeStoredUser } from '../utils/profileStorage.js'
 
 function Login({ setUser }) {
   const navigate = useNavigate()
@@ -17,7 +18,9 @@ function Login({ setUser }) {
     try {
       const response = await authAPI.login({ email, password })
       if (response?.data) {
-        setUser(response.data)
+        const nextUser = normalizeUser(response.data)
+        writeStoredUser(nextUser)
+        setUser(nextUser)
         navigate('/')
       }
     } catch (err) {

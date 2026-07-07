@@ -10,15 +10,18 @@ datasource db {
 }
 
 model Habit {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  category  String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  category      String?
+  targetPerDay  Int?
+  reminder     Boolean? @default(false)
+  timeOfDay     String?
+  createdAt     DateTime @default(now())
 
   // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entries   Entry[]
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries       Entry[]
 
   @@map("habits")
 }
@@ -39,6 +42,9 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  firstName String?
+  lastName  String?
+  language  String?  @default("Deutsch")
   createdAt DateTime @default(now())
 
   // Relations

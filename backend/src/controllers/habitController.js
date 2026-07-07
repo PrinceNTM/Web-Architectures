@@ -30,7 +30,7 @@ export const getHabitById = async (req, res) => {
 export const createHabit = async (req, res) => {
   try {
     // 1. Input lesen
-    const userId = req.user.id; 
+    const userId = req.user.userId;
     const data = req.body;
 
     // 2. Service aufrufen
@@ -81,15 +81,29 @@ export const checkInHabit = async (req, res) => {
     const { date } = req.body
     const userId = req.user.userId
 
-    // Guard: Prüft Existenz und Ownership im Habit Context
     await HabitService.getHabitById(habitId, userId);
-
-    // Aktion: Erstellt Eintrag im Tracking Context
     const checkin = await TrackingService.createEntry(habitId, date, 1)
     res.status(201).json(checkin)
   } catch (error) {
     console.error('Error checking in habit:', error)
-    res.status(500).json({ error: 'Interner Serverfehler.' })
+    const status = error.statusCode || 500
+    res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
+  }
+}
+
+export const removeHabitCheckin = async (req, res) => {
+  try {
+    const { habitId } = req.params
+    const { date } = req.query
+    const userId = req.user.userId
+
+    await HabitService.getHabitById(habitId, userId);
+    await TrackingService.deleteEntry(habitId, date)
+    res.status(204).send()
+  } catch (error) {
+    console.error('Error removing habit checkin:', error)
+    const status = error.statusCode || 500
+    res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
   }
 }
 
@@ -98,14 +112,23 @@ export const getHabitCheckins = async (req, res) => {
     const { habitId } = req.params
     const userId = req.user.userId
 
-    // Guard
     await HabitService.getHabitById(habitId, userId);
-
-    // Aktion via Tracking Service
     const checkins = await TrackingService.getEntriesByHabitId(habitId)
     res.json(checkins)
   } catch (error) {
     console.error('Error fetching habit checkins:', error)
+    const status = error.statusCode || 500
+    res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
+  }
+}
+
+export const resetCheckinsForDate = async (req, res) => {
+  try {
+    const { date } = req.body
+    await TrackingService.deleteEntriesByDate(date)
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Error resetting habit checkins:', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }

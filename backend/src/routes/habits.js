@@ -8,6 +8,8 @@ import {
   deleteHabit,
   checkInHabit,
   getHabitCheckins,
+  removeHabitCheckin,
+  resetCheckinsForDate,
   setupSSEConnection,
 } from '../controllers/habitController.js'
 
@@ -27,7 +29,9 @@ router.put('/:id', updateHabit)
 router.delete('/:id', deleteHabit)
 
 // Check-in routes
-router.post('/:habitId/checkin', checkInHabit)
+router.post('/:habitId/checkins', checkInHabit)
+router.delete('/:habitId/checkins', removeHabitCheckin)
 router.get('/:habitId/checkins', getHabitCheckins)
+router.post('/checkins/reset', resetCheckinsForDate)
 
 export default router

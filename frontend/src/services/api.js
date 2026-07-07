@@ -40,14 +40,18 @@ export const habitAPI = {
   create: (data) => api.post('/habits', data),
   update: (id, data) => api.put(`/habits/${id}`, data),
   delete: (id) => api.delete(`/habits/${id}`),
-  checkOff: (habitId, date) => api.post(`/habits/${habitId}/checkin`, { date }),
+  checkOff: (habitId, date) => api.post(`/habits/${habitId}/checkins`, { date }),
+  uncheck: (habitId, date) => api.delete(`/habits/${habitId}/checkins`, { params: { date } }),
   getCheckins: (habitId) => api.get(`/habits/${habitId}/checkins`),
+  resetCheckins: (date) => api.post('/habits/checkins/reset', { date }),
 }
 
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (data) => api.post('/auth/register', data),
-  me: () => api.get('/auth/me'),
+  me: () => api.get('/user/me'),
+  getProfile: () => api.get('/user/me'),
+  updateProfile: (data) => api.put('/user/profile', data),
   logout: () => api.post('/auth/logout'),
 }
 

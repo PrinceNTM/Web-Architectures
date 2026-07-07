@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import { authAPI } from './services/api.js'
+import { normalizeUser, readStoredUser, writeStoredUser, clearStoredUser } from './utils/profileStorage.js'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -13,10 +14,13 @@ function App() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await authAPI.me()
-        setUser(response.data)
+        const response = await authAPI.getProfile()
+        const nextUser = normalizeUser(response.data)
+        writeStoredUser(nextUser)
+        setUser(nextUser)
       } catch (error) {
-        setUser(null)
+        const storedUser = readStoredUser()
+        setUser(storedUser || null)
       } finally {
         setAuthLoading(false)
       }
@@ -42,7 +46,7 @@ function App() {
       <Route
         path="/"
         element={
-          user ? <Dashboard onLogout={() => setUser(null)} /> : <Navigate to="/login" replace state={{ from: location }} />
+          user ? <Dashboard onLogout={() => { clearStoredUser(); setUser(null) }} user={user} onUserChange={setUser} /> : <Navigate to="/login" replace state={{ from: location }} />
         }
       />
       <Route path="*" element={<Navigate to={user ? '/' : '/login'} replace />} />

@@ -4,6 +4,12 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './App.css'
 
+if (import.meta.hot) {
+  import.meta.hot.on('vite:beforeFullReload', () => {
+    window.location.reload()
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

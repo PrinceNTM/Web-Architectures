@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles'
 
 function HabitCards({
   habits,
@@ -7,6 +8,7 @@ function HabitCards({
   onToggleHabit,
   onDeleteHabit,
   onUpdateHabit,
+  theme = 'light',
 }) {
   const [openSettingsId, setOpenSettingsId] = useState(null)
   const [draftHabit, setDraftHabit] = useState(null)
@@ -61,7 +63,8 @@ function HabitCards({
         return (
           <article
             key={habit.id}
-            className={`habit-card ${isSelected ? 'selected' : ''}`}
+            className={`habit-card ${getCategoryClass(habit.category)} ${isSelected ? 'selected' : ''}`}
+            style={getCategoryStyle(habit.category, theme)}
             data-cy={`habit-${habit.id}`}
             onClick={() => onSelectHabit(habit.id)}
           >

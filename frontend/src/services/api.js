@@ -11,8 +11,15 @@ const api = axios.create({
 })
 
 // Global response interceptor: on 401, redirect to /login
-// Skip auth endpoints to avoid infinite loops (e.g. /auth/me on initial load, /auth/logout itself)
-const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/me', '/auth/logout']
+// Skip auth endpoints to avoid infinite loops (e.g. /user/me on initial load, /auth/logout itself)
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/me',
+  '/auth/logout',
+  '/user/me',
+  '/user/profile',
+]
 
 api.interceptors.response.use(
   (response) => response,

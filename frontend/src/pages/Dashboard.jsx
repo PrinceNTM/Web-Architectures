@@ -34,6 +34,11 @@ function Dashboard({ onLogout, user, onUserChange }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [editingHabitId, setEditingHabitId] = useState(null)
   const [editedHabitName, setEditedHabitName] = useState('')
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false)
+  const [categoryFilters, setCategoryFilters] = useState([])
+  const [pendingCategoryFilters, setPendingCategoryFilters] = useState([])
+
+  const categories = ['General', 'Health & Fitness', 'Wellness', 'Learning', 'Mental Health', 'Sleep', 'Exercise', 'Work', 'Daily Routine']
 
   useEffect(() => {
     document.body.classList.toggle('light-mode', !darkMode)
@@ -158,6 +163,33 @@ function Dashboard({ onLogout, user, onUserChange }) {
 
   const resetProfileDraft = () => {
     setProfile(savedProfile)
+  }
+
+  const openCategoryFilter = () => {
+    setPendingCategoryFilters(categoryFilters)
+    setCategoryFilterOpen(true)
+  }
+
+  const togglePendingCategory = (category) => {
+    setPendingCategoryFilters((prev) =>
+      prev.includes(category)
+        ? prev.filter((item) => item !== category)
+        : [...prev, category],
+    )
+  }
+
+  const applyCategoryFilters = () => {
+    setCategoryFilters(pendingCategoryFilters)
+    setCategoryFilterOpen(false)
+  }
+
+  const clearCategoryFilters = () => {
+    setPendingCategoryFilters([])
+    setCategoryFilters([])
+  }
+
+  const closeCategoryFilter = () => {
+    setCategoryFilterOpen(false)
   }
 
   const handleSaveProfile = async (event) => {
@@ -397,11 +429,20 @@ function Dashboard({ onLogout, user, onUserChange }) {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))
   }
 
-  const visibleHabits = activeSection === 'all'
-    ? habits
-    : ['Morgen', 'Nachmittag', 'Abend'].includes(activeSection)
-      ? habits.filter((habit) => habit.timeRange === activeSection)
-      : habits
+  const visibleHabits = (() => {
+    const sectionFiltered = activeSection === 'all'
+      ? habits
+      : ['Morgen', 'Nachmittag', 'Abend'].includes(activeSection)
+        ? habits.filter((habit) => habit.timeRange === activeSection)
+        : habits
+
+    if (categoryFilters.length === 0) {
+      return sectionFiltered
+    }
+
+    return sectionFiltered.filter((habit) => categoryFilters.includes(habit.category))
+  })()
+
   const selectedHabit = visibleHabits.find((habit) => habit.id === selectedHabitId) || visibleHabits[0] || habits[0]
   const completedDays = selectedHabit ? buildCompletedDays(selectedHabit, currentDate) : []
   const completedToday = habits.filter((habit) => habit.isChecked).length
@@ -590,7 +631,45 @@ function Dashboard({ onLogout, user, onUserChange }) {
             />
             <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit} type="button">+</button>
             <button className="browse-btn" onClick={() => setShowSuggestions((prev) => !prev)} type="button">Browse</button>
+            <button className="icon-btn" onClick={openCategoryFilter} type="button" aria-label="Filter öffnen">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
           </section>
+
+          {categoryFilterOpen && (
+            <div className="filter-popout-overlay" role="dialog" aria-modal="true" onClick={closeCategoryFilter}>
+              <div className="filter-popout" onClick={(event) => event.stopPropagation()}>
+                <div className="filter-popout-header">
+                  <h3>Kategorien filtern</h3>
+                  <button className="icon-btn" type="button" onClick={closeCategoryFilter} aria-label="Filter schließen">×</button>
+                </div>
+                <div className="filter-list">
+                  {categories.map((category) => {
+                    const active = pendingCategoryFilters.includes(category)
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        className={`filter-item ${active ? 'active' : ''}`}
+                        onClick={() => togglePendingCategory(category)}
+                      >
+                        <span className="filter-item-label">{category}</span>
+                        <span className={`filter-item-check ${active ? 'active' : ''}`} aria-hidden="true">
+                          {active ? '✓' : ''}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="filter-popout-actions">
+                  <button className="cancel-btn" type="button" onClick={clearCategoryFilters}>Clear</button>
+                  <button className="save-btn" type="button" onClick={applyCategoryFilters}>Apply</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showSuggestions && (
             <div className="suggestions-modal" role="dialog" aria-modal="true">
@@ -621,6 +700,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
             onToggleHabit={handleToggleCheckbox}
             onDeleteHabit={deleteHabit}
             onUpdateHabit={handleUpdateHabit}
+            theme={darkMode ? 'dark' : 'light'}
           />
         </main>
 

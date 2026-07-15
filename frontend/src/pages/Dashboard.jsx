@@ -7,6 +7,7 @@ import RealtimeUpdates from '../components/RealtimeUpdates.jsx'
 import Sidebar from '../components/Sidebar.jsx'
 import { normalizeUser, readStoredUser, writeStoredUser } from '../utils/profileStorage.js'
 import { buildHabitUpdatePayload, normalizeHabits, readStoredHabits, writeStoredHabits } from '../utils/habitStorage.js'
+import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles.js'
 
 function Dashboard({ onLogout, user, onUserChange }) {
   const [habits, setHabits] = useState(() => readStoredHabits())
@@ -652,7 +653,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
                       <button
                         key={category}
                         type="button"
-                        className={`filter-item ${active ? 'active' : ''}`}
+                        className={`filter-item ${active ? 'active' : ''} ${getCategoryClass(category)}`}
+                        style={getCategoryStyle(category, darkMode ? 'dark' : 'light')}
                         onClick={() => togglePendingCategory(category)}
                       >
                         <span className="filter-item-label">{category}</span>
@@ -710,6 +712,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
           completedDays={completedDays}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
+          theme={darkMode ? 'dark' : 'light'}
         />
       </div>
     </>

@@ -1,4 +1,6 @@
-function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextMonth }) {
+import { getCategoryStyle } from '../utils/categoryStyles.js'
+
+function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextMonth, theme = 'light' }) {
   const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
   const firstDay = (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() + 6) % 7
@@ -36,7 +38,7 @@ function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextM
           <p className="eyebrow">Detail</p>
           <h2>{habit?.name || 'Habit auswaehlen'}</h2>
         </div>
-        <span className="detail-pill">{habit?.category || 'Overview'}</span>
+        <span className="detail-pill" style={getCategoryStyle(habit?.category, theme)}>{habit?.category || 'Overview'}</span>
       </div>
 
       <div className="detail-stats">

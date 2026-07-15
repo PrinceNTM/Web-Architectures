@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles'
 
 function HabitCards({
@@ -12,12 +12,39 @@ function HabitCards({
 }) {
   const [openSettingsId, setOpenSettingsId] = useState(null)
   const [draftHabit, setDraftHabit] = useState(null)
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
 
-  const categories = ['General', 'Health & Fitness', 'Wellness', 'Learning', 'Mental Health', 'Sleep', 'Exercise']
+  const categories = [
+    'General',
+    'Health & Fitness',
+    'Wellness',
+    'Learning',
+    'Mental Health',
+    'Sleep',
+    'Exercise',
+    'Work',
+    'Daily Routine',
+  ]
   const timeRanges = ['Morgen', 'Nachmittag', 'Abend']
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setCategoryDropdownOpen(false)
+      }
+    }
+    if (categoryDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [categoryDropdownOpen])
 
   const openHabitSettings = (habit) => {
     setOpenSettingsId(habit.id)
+    setCategoryDropdownOpen(false)
     setDraftHabit({
       name: habit.name || '',
       category: habit.category || 'General',
@@ -29,6 +56,7 @@ function HabitCards({
 
   const closeHabitSettings = () => {
     setOpenSettingsId(null)
+    setCategoryDropdownOpen(false)
     setDraftHabit(null)
   }
 
@@ -59,12 +87,13 @@ function HabitCards({
         const isSelected = selectedHabitId === habit.id
         const isSettingsOpen = openSettingsId === habit.id
         const progressValue = habit.total > 0 ? Math.round((habit.completedCount / habit.total) * 100) : habit.isChecked ? 100 : 0
+        const activeCategory = isSettingsOpen && draftHabit ? draftHabit.category : habit.category
 
         return (
           <article
             key={habit.id}
-            className={`habit-card ${getCategoryClass(habit.category)} ${isSelected ? 'selected' : ''}`}
-            style={getCategoryStyle(habit.category, theme)}
+            className={`habit-card ${getCategoryClass(activeCategory)} ${isSelected ? 'selected' : ''}`}
+            style={getCategoryStyle(activeCategory, theme)}
             data-cy={`habit-${habit.id}`}
             onClick={() => onSelectHabit(habit.id)}
           >
@@ -132,13 +161,43 @@ function HabitCards({
 
                   <div className="popout-field">
                     <label htmlFor={`habit-category-${habit.id}`}>Kategorie</label>
-                    <select
-                      id={`habit-category-${habit.id}`}
-                      value={draftHabit.category}
-                      onChange={(event) => setDraftHabit({ ...draftHabit, category: event.target.value })}
-                    >
-                      {categories.map((category) => <option key={category}>{category}</option>)}
-                    </select>
+                    <div className="custom-dropdown" ref={dropdownRef} id={`habit-category-${habit.id}-container`}>
+                      <button
+                        type="button"
+                        className={`dropdown-trigger ${getCategoryClass(draftHabit.category)}`}
+                        style={getCategoryStyle(draftHabit.category, theme)}
+                        onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                        aria-expanded={categoryDropdownOpen}
+                      >
+                        <span className="dropdown-trigger-label">{draftHabit.category}</span>
+                        <span className="dropdown-arrow">▼</span>
+                      </button>
+
+                      {categoryDropdownOpen && (
+                        <div className="dropdown-options-list">
+                          {categories.map((category) => {
+                            const isSelected = draftHabit.category === category
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                className={`dropdown-option ${isSelected ? 'active' : ''} ${getCategoryClass(category)}`}
+                                style={getCategoryStyle(category, theme)}
+                                onClick={() => {
+                                  setDraftHabit({ ...draftHabit, category })
+                                  setCategoryDropdownOpen(false)
+                                }}
+                              >
+                                <span className="dropdown-option-label">{category}</span>
+                                <span className={`dropdown-option-check ${isSelected ? 'active' : ''}`} aria-hidden="true">
+                                  {isSelected ? '✓' : ''}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="popout-field">

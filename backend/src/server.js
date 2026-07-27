@@ -21,7 +21,19 @@ const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:5173', 'ht
 
 const corsOriginHandler = (origin, callback) => {
   if (!origin) return callback(null, true)
-  if (allowedOrigins.includes(origin)) return callback(null, true)
+  
+  // Allow all local origins (localhost, 127.0.0.1, or local subnet IPs) and development environments
+  const isLocal = origin.startsWith('http://localhost:') || 
+                  origin.startsWith('http://127.0.0.1:') || 
+                  origin.startsWith('http://[::1]:') || 
+                  origin.startsWith('http://192.168.') || 
+                  origin.startsWith('http://10.') || 
+                  origin.startsWith('http://172.16.') || 
+                  origin.startsWith('http://172.31.')
+                  
+  if (isLocal || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    return callback(null, true)
+  }
   return callback(new Error('Not allowed by CORS'))
 }
 

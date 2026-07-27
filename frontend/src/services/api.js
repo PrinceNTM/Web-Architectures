@@ -1,6 +1,24 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+
+// If the app is opened via an external browser on a different hostname/IP,
+// dynamically adjust the API URL to use the current hostname/IP.
+if (typeof window !== 'undefined' && window.location) {
+  const { hostname, protocol, origin } = window.location
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    if (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1')) {
+      const backendPort = '3000'
+      if (hostname.includes('5173')) {
+        API_BASE_URL = `${protocol}//${hostname.replace('5173', backendPort)}/api`
+      } else if (origin.includes('5173')) {
+        API_BASE_URL = origin.replace('5173', backendPort) + '/api'
+      } else {
+        API_BASE_URL = `${protocol}//${hostname}:${backendPort}/api`
+      }
+    }
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

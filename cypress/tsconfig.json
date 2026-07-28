@@ -3,10 +3,9 @@
     "target": "ESNext",
     "module": "ESNext",
     "lib": ["ES2017", "DOM"],
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "ignoreDeprecations": "6.0",
     "skipLibCheck": true,
     "types": ["cypress"]
   },

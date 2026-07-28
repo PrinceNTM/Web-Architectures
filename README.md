@@ -15,7 +15,43 @@ A full-stack habit tracking application built with React + Vite (frontend) and E
 habit-tracker/
 ├── frontend/          (React + Vite, Port 5173)
 ├── backend/           (Express, Port 3000)
+├── legacy/            (historische Altdateien, nicht aktiv)
 └── README.md
+```
+
+## Quick Start (One Command)
+
+### 1) Setup environment files
+
+Copy the example files once:
+
+```bash
+copy backend\\.env.example backend\\.env
+copy frontend\\.env.example frontend\\.env.local
+```
+
+### 2) Start full stack (frontend + backend + database migrations)
+
+From repository root:
+
+```bash
+npm run dev
+```
+
+This starts:
+- backend on `http://localhost:3000`
+- frontend on `http://localhost:5173`
+
+### 3) Run all tests with one command
+
+```bash
+npm test
+```
+
+### 4) Run coverage reports
+
+```bash
+npm run test:coverage
 ```
 
 ## Getting Started

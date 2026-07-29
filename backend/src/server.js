@@ -12,6 +12,7 @@ import habitRoutes from './routes/habits.js'
 import userRoutes from './routes/user.js'
 import { initializeSocket } from './realtime/socket.js'
 import { startEmailQueueWorker } from './emails/emailQueue.js'
+import { requireRequestedWith } from './middleware/requireRequestedWith.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -87,6 +88,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:'],
       connectSrc: ["'self'", 'http://localhost:3000', 'ws://localhost:3000'],
     },
   },
@@ -95,11 +97,12 @@ app.use(cors({
   origin: corsOriginHandler,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie'],
 }))
 app.use(cookieParser())
 app.use(express.json({ limit: '100kb' }))
+app.use(requireRequestedWith)
 
 // Routes
 app.use('/api/auth', authRoutes)

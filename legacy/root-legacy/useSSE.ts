@@ -1,6 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { authFetch } from './utils/authFetch';
-
 /**
  * Custom Hook für Server-Sent Events (SSE)
  * Verbindet sich mit dem SSE-Endpoint und reagiert auf Events
@@ -15,7 +13,6 @@ import { authFetch } from './utils/authFetch';
  * @param eventType - Optional: Reagiere nur auf bestimmte Event-Typen
  */
 export const useSSE = (onEvent: (data: any) => void, eventType: string | null = null) => {
-  // In einer echten App würde hier authFetch oder ein spezifischer Token-Service genutzt
   const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
   // Aktuellen Callback/Filter in Refs spiegeln, damit die Effect-Dependencies
@@ -51,16 +48,9 @@ export const useSSE = (onEvent: (data: any) => void, eventType: string | null = 
 
     const connectSSE = async () => {
       try {
-        // Nutzung von authFetch statt manuellem fetch
-        const sseTokenResponse = await authFetch(`${API_URL}/auth/sse-token`);
-        if (isCancelled) return
-        const { token: sseToken } = await sseTokenResponse.json();
+        const url = `${API_URL}/habits/events/stream`
 
-        // EventSource zum SSE-Endpoint verbinden mit Token
-        const url = `${API_URL}/habits/events/stream?token=${encodeURIComponent(sseToken)}`
-        console.log('Verbinde zu SSE-Endpoint mit Token')
-
-        eventSource = new EventSource(url)
+        eventSource = new EventSource(url, { withCredentials: true })
 
         // Falls der Effect während des Token-Fetches schon wieder aufgeräumt
         // wurde, die frisch erzeugte Verbindung sofort schließen (kein Leak).
@@ -72,7 +62,7 @@ export const useSSE = (onEvent: (data: any) => void, eventType: string | null = 
 
         // Bei erfolgreicher Verbindung
         eventSource.addEventListener('connected', () => {
-          console.log('SSE-Verbindung hergestellt')
+          return undefined
         })
 
         // Generic Message-Handler für alle Events

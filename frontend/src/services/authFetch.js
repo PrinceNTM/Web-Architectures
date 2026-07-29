@@ -12,6 +12,7 @@ export default async function authFetch(url, options = {}) {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
       ...(options.headers || {}),
     },
     ...options,

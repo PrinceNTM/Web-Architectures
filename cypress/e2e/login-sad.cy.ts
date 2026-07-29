@@ -9,6 +9,7 @@ describe('Login Sad Path - invalid credentials', () => {
     cy.request({
       method: 'POST',
       url: `${api}/auth/register`,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       body: { email, password },
       failOnStatusCode: false,
     })

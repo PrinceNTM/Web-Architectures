@@ -13,7 +13,7 @@ try {
 Write-Output "Register:"
 try {
   $registerBody = @{ email = $email; password = $password } | ConvertTo-Json
-  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/register' -Method POST -ContentType 'application/json' -Body $registerBody -WebSession $session | ConvertTo-Json
+  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/register' -Method POST -ContentType 'application/json' -Headers @{ 'X-Requested-With' = 'XMLHttpRequest' } -Body $registerBody -WebSession $session | ConvertTo-Json
 } catch {
   Write-Output "Register failed: $_"
 }
@@ -21,14 +21,14 @@ try {
 Write-Output "Login:"
 try {
   $loginBody = @{ email = $email; password = $password } | ConvertTo-Json
-  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Body $loginBody -WebSession $session | ConvertTo-Json
+  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Headers @{ 'X-Requested-With' = 'XMLHttpRequest' } -Body $loginBody -WebSession $session | ConvertTo-Json
 } catch {
   Write-Output "Login failed: $_"
 }
 
 Write-Output "CreateHabit:"
 try {
-  $habit = Invoke-RestMethod -Uri 'http://localhost:3000/api/habits' -Method POST -ContentType 'application/json' -Body '{"name":"E2E Habit","category":"test"}' -WebSession $session
+  $habit = Invoke-RestMethod -Uri 'http://localhost:3000/api/habits' -Method POST -ContentType 'application/json' -Headers @{ 'X-Requested-With' = 'XMLHttpRequest' } -Body '{"name":"E2E Habit","category":"test"}' -WebSession $session
   $habit | ConvertTo-Json
 } catch {
   Write-Output "Create habit failed: $_"
@@ -44,7 +44,7 @@ if ($habit) {
 
   Write-Output "Checkin:"
   try {
-    Invoke-RestMethod -Uri ("http://localhost:3000/api/habits/$($habit.id)/checkin") -Method POST -ContentType 'application/json' -Body '{"date":"2026-05-27"}' -WebSession $session | ConvertTo-Json
+    Invoke-RestMethod -Uri ("http://localhost:3000/api/habits/$($habit.id)/checkin") -Method POST -ContentType 'application/json' -Headers @{ 'X-Requested-With' = 'XMLHttpRequest' } -Body '{"date":"2026-05-27"}' -WebSession $session | ConvertTo-Json
   } catch {
     Write-Output "Checkin failed: $_"
   }

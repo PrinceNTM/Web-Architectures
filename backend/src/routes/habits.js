@@ -1,5 +1,6 @@
 import express from 'express'
 import { authenticate } from '../middleware/authenticate.js'
+import { authRateLimiter } from '../middleware/rateLimit.js'
 import {
   getHabits,
   getHabitById,
@@ -24,7 +25,7 @@ router.get('/events/stream', setupSSEConnection)
 // Habit CRUD routes
 router.get('/', getHabits)
 router.get('/:id', getHabitById)
-router.post('/', createHabit)
+router.post('/', authRateLimiter, createHabit)
 router.put('/:id', updateHabit)
 router.delete('/:id', deleteHabit)
 

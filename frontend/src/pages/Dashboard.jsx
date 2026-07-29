@@ -23,6 +23,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
     lastName: '',
     language: 'Deutsch',
     email: '',
+    currentPassword: '',
     password: '',
     confirmPassword: '',
     twoFactor: false,
@@ -208,13 +209,14 @@ function Dashboard({ onLogout, user, onUserChange }) {
         lastName: nextProfile.lastName,
         email: nextProfile.email,
         language: nextProfile.language,
+        currentPassword: nextProfile.currentPassword,
       })
 
       const persistedUser = normalizeUser(response.data)
       writeStoredUser(persistedUser)
       onUserChange?.(persistedUser)
-      setSavedProfile({ ...nextProfile, ...persistedUser })
-      setProfile({ ...nextProfile, ...persistedUser })
+      setSavedProfile({ ...nextProfile, ...persistedUser, currentPassword: '' })
+      setProfile({ ...nextProfile, ...persistedUser, currentPassword: '' })
       setLastSavedEmail(persistedUser.email)
 
       if (persistedUser.email !== lastSavedEmail) {
@@ -226,8 +228,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
       const fallbackUser = normalizeUser({ ...savedProfile, ...profile, email: profile.email, firstName: profile.firstName, lastName: profile.lastName, language: profile.language })
       writeStoredUser(fallbackUser)
       onUserChange?.(fallbackUser)
-      setSavedProfile({ ...nextProfile, ...fallbackUser })
-      setProfile({ ...nextProfile, ...fallbackUser })
+      setSavedProfile({ ...nextProfile, ...fallbackUser, currentPassword: '' })
+      setProfile({ ...nextProfile, ...fallbackUser, currentPassword: '' })
       setNotification('Profil konnte nicht gespeichert werden. Die Änderungen wurden lokal gesichert.')
       setShowNotification(true)
     } finally {
@@ -496,6 +498,18 @@ function Dashboard({ onLogout, user, onUserChange }) {
                 className="form-input"
                 value={profile.email}
                 onChange={(event) => setProfile({ ...profile, email: event.target.value })}
+              />
+            </div>
+
+            <div className="form-field">
+              <label className="form-label" htmlFor="currentPassword">Aktuelles Passwort</label>
+              <input
+                id="currentPassword"
+                type="password"
+                className="form-input"
+                placeholder="Nur fuer E-Mail-Aenderungen erforderlich"
+                value={profile.currentPassword}
+                onChange={(event) => setProfile({ ...profile, currentPassword: event.target.value })}
               />
             </div>
 

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mockFindUnique = vi.fn()
 const mockFindFirst = vi.fn()
 const mockUpdate = vi.fn()
+const mockCompare = vi.fn()
+const mockSetAuthCookie = vi.fn()
 
 vi.mock('../prisma.js', () => ({
   default: {
@@ -12,6 +14,16 @@ vi.mock('../prisma.js', () => ({
       update: (...args) => mockUpdate(...args),
     },
   },
+}))
+
+vi.mock('bcrypt', () => ({
+  default: {
+    compare: (...args) => mockCompare(...args),
+  },
+}))
+
+vi.mock('../utils/authSession.js', () => ({
+  setAuthCookie: (...args) => mockSetAuthCookie(...args),
 }))
 
 import { getCurrentUserProfile, updateUserProfile } from './userController.js'
@@ -26,6 +38,8 @@ describe('userController', () => {
     mockFindUnique.mockReset()
     mockFindFirst.mockReset()
     mockUpdate.mockReset()
+    mockCompare.mockReset()
+    mockSetAuthCookie.mockReset()
   })
 
   it('returns current profile for authenticated user', async () => {
@@ -90,10 +104,12 @@ describe('userController', () => {
   })
 
   it('returns 409 when normalized email is already used', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockCompare.mockResolvedValue(true)
     mockFindFirst.mockResolvedValue({ id: 'u2' })
     const req = {
       user: { userId: 'u1' },
-      body: { email: 'Taken@Example.com', firstName: 'A', lastName: 'B' },
+      body: { email: 'Taken@Example.com', firstName: 'A', lastName: 'B', currentPassword: 'pw' },
     }
     const res = createRes()
     const next = vi.fn()
@@ -107,6 +123,8 @@ describe('userController', () => {
   })
 
   it('updates and normalizes profile values', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockCompare.mockResolvedValue(true)
     mockFindFirst.mockResolvedValue(null)
     mockUpdate.mockResolvedValue({
       id: 'u1',
@@ -121,6 +139,7 @@ describe('userController', () => {
         email: 'NEW@EXAMPLE.COM',
         firstName: ' Max ',
         lastName: ' Mustermann ',
+        currentPassword: 'pw',
       },
     }
     const res = createRes()
@@ -145,10 +164,12 @@ describe('userController', () => {
       lastName: 'Mustermann',
       language: 'Deutsch',
     })
+    expect(mockSetAuthCookie).toHaveBeenCalledWith(res, { userId: 'u1', email: 'new@example.com' })
     expect(next).not.toHaveBeenCalled()
   })
 
   it('forwards db errors in updateUserProfile via next()', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com', password: 'hash' })
     mockFindFirst.mockResolvedValue(null)
     const dbError = new Error('update failed')
     mockUpdate.mockRejectedValue(dbError)
@@ -159,5 +180,22 @@ describe('userController', () => {
     await updateUserProfile(req, res, next)
 
     expect(next).toHaveBeenCalledWith(dbError)
+  })
+
+  it('returns 401 when email changes without a valid current password', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockCompare.mockResolvedValue(false)
+    const req = {
+      user: { userId: 'u1' },
+      body: { email: 'new@example.com', currentPassword: 'bad-password' },
+    }
+    const res = createRes()
+    const next = vi.fn()
+
+    await updateUserProfile(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Aktuelles Passwort ungueltig.' })
+    expect(next).not.toHaveBeenCalled()
   })
 })

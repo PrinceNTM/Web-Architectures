@@ -1,4 +1,6 @@
 import prisma from '../prisma.js'
+import bcrypt from 'bcrypt'
+import { setAuthCookie } from '../utils/authSession.js'
 
 const toUserResponse = (user) => ({
   id: user.id,
@@ -33,13 +35,38 @@ export const getCurrentUserProfile = async (req, res, next) => {
 
 export const updateUserProfile = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, language } = req.body || {}
+    const { firstName, lastName, email, language, currentPassword } = req.body || {}
 
     if (!email) {
       return res.status(400).json({ error: 'E-Mail ist erforderlich.' })
     }
 
     const normalizedEmail = email.toLowerCase()
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+      },
+    })
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User nicht gefunden.' })
+    }
+
+    const emailChanged = normalizedEmail !== currentUser.email
+
+    if (emailChanged) {
+      const passwordMatches = currentPassword
+        ? await bcrypt.compare(currentPassword, currentUser.password)
+        : false
+
+      if (!passwordMatches) {
+        return res.status(401).json({ error: 'Aktuelles Passwort ungueltig.' })
+      }
+    }
+
     const existingUser = await prisma.user.findFirst({
       where: {
         email: normalizedEmail,
@@ -69,6 +96,10 @@ export const updateUserProfile = async (req, res, next) => {
         language: true,
       },
     })
+
+    if (emailChanged) {
+      setAuthCookie(res, { userId: updatedUser.id, email: updatedUser.email })
+    }
 
     return res.json(toUserResponse(updatedUser))
   } catch (error) {

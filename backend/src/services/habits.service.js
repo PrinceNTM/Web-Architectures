@@ -45,10 +45,22 @@ export const createHabit = async (data, userId) => {
   const habit = await prisma.habit.create({
     data: habitData,
   });
+
+  const owner = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  })
   
   // Side-Effects gekapselt im Service
-  enqueueEmail({ type: 'habit-created', data: habit });
-  broadcastEvent(userId, { type: 'habit-created', habit });
+  enqueueEmail({
+    type: 'habit_created',
+    to: owner?.email,
+    habitName: habit.name,
+    createdAt: habit.createdAt,
+    appUrl: process.env.FRONTEND_URL || 'https://localhost:5173',
+    habitId: habit.id,
+  });
+  broadcastEvent(userId, 'habit-created', habit);
   
   return habit;
 };

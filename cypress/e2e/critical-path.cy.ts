@@ -9,6 +9,7 @@ describe('Critical path - Login and create habit', () => {
     cy.request({
       method: 'POST',
       url: `${api}/auth/register`,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       body: { email, password },
       failOnStatusCode: false,
     })

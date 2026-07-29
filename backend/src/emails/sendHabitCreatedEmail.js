@@ -12,6 +12,11 @@ export const sendHabitCreatedEmail = async ({ to, habitName, createdAt, appUrl, 
     return
   }
 
+  if (to.endsWith('@example.com')) {
+    logger.info('email.habit_created.skipped_test_address')
+    return
+  }
+
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {

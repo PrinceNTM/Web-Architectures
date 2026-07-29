@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import { logger } from '../utils/logger.js'
+import { TOKEN_NAME } from '../utils/authSession.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
-const TOKEN_NAME = 'token'
 const UNAUTHORIZED_ERROR = { error: 'Nicht autorisiert.' }
 
 export const authenticate = (req, res, next) => {

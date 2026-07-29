@@ -16,6 +16,9 @@ vi.mock('../prisma.js', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -82,8 +85,9 @@ describe('Habits Service', () => {
   // --- createHabit tests ---
   it('should create a new habit with valid data (normal case)', async () => {
     const newHabitData = { name: 'New Habit', category: 'Work' };
-    const createdHabit = { id: 'newHabitId', ...newHabitData, userId: mockUserId };
+    const createdHabit = { id: 'newHabitId', ...newHabitData, userId: mockUserId, createdAt: new Date('2026-07-29T10:00:00.000Z') };
     prisma.habit.create.mockResolvedValue(createdHabit);
+    prisma.user.findUnique.mockResolvedValue({ email: 'owner@example.com' })
 
     const result = await createHabit(newHabitData, mockUserId);
 
@@ -95,8 +99,15 @@ describe('Habits Service', () => {
         userId: mockUserId,
       },
     });
-    expect(enqueueEmail).toHaveBeenCalledWith({ type: 'habit-created', data: createdHabit });
-    expect(broadcastEvent).toHaveBeenCalledWith(mockUserId, { type: 'habit-created', habit: createdHabit });
+    expect(enqueueEmail).toHaveBeenCalledWith({
+      type: 'habit_created',
+      to: 'owner@example.com',
+      habitName: 'New Habit',
+      createdAt: createdHabit.createdAt,
+      appUrl: 'https://localhost:5173',
+      habitId: 'newHabitId',
+    });
+    expect(broadcastEvent).toHaveBeenCalledWith(mockUserId, 'habit-created', createdHabit);
   });
 
   it('should throw ValidationError if name is missing (error case)', async () => {

@@ -9,13 +9,21 @@ Full-stack Habit Tracker application with:
 ## Setup Checklist
 
 - [x] Verify copilot-instructions.md file exists
-- [ ] Scaffold project structure
-- [ ] Install dependencies
-- [ ] Configure environment variables
-- [ ] Set up database (if applicable)
-- [ ] Verify project compiles
-- [ ] Create run tasks
-- [ ] Launch project
+- [x] Scaffold project structure
+- [x] Install dependencies
+- [x] Configure environment variables
+- [x] Set up database (if applicable)
+- [x] Verify project compiles
+- [x] Create run tasks
+- [x] Launch project
+
+Validated locally:
+- VS Code run tasks added in `.vscode/tasks.json`
+- Development env files created in `backend/.env` and `frontend/.env.local`
+- Prisma generate/migrate runs successfully against SQLite
+- Frontend build passes with `npm run build`
+- Backend tests pass with `npm --prefix backend run test`
+- Full E2E flow passes with `npm run e2e:ci`
 
 ## Project Structure
 

@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev: Full Stack",
+      "type": "npm",
+      "script": "dev",
+      "path": ""
+    },
+    {
+      "label": "Dev: Backend",
+      "type": "npm",
+      "script": "dev:backend",
+      "path": ""
+    },
+    {
+      "label": "Dev: Frontend",
+      "type": "npm",
+      "script": "dev:frontend",
+      "path": ""
+    },
+    {
+      "label": "Test: All",
+      "type": "npm",
+      "script": "test",
+      "path": ""
+    },
+    {
+      "label": "Coverage: All",
+      "type": "npm",
+      "script": "test:coverage",
+      "path": ""
+    }
+  ]
+}

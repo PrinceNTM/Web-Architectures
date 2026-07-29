@@ -1,0 +1,143 @@
+{
+  "app": {
+    "loadingAuth": "Authentifizierung wird geprueft..."
+  },
+  "sections": {
+    "all": "Alle Habits",
+    "morning": "Morgen",
+    "afternoon": "Nachmittag",
+    "evening": "Abend",
+    "resources": "Ressourcen / Hilfe"
+  },
+  "sidebar": {
+    "defaultProfileName": "Daily Habits",
+    "mainNavAria": "Hauptnavigation",
+    "habitAreasAria": "Habit Bereiche",
+    "overviewHint": "Uebersicht",
+    "timeRangeHint": "Zeitbereich",
+    "supportHint": "Support",
+    "themeTitle": "Light / Dark",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "toggleThemeAria": "Light Dark Mode umschalten",
+    "editProfile": "Profil bearbeiten",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "eyebrow": "Daily Habits",
+    "allHabits": "Alle Habits",
+    "today": "Heute",
+    "streaks": "Streaks",
+    "composerAria": "Habit erstellen",
+    "newHabitPlaceholder": "Neue Habit eingeben...",
+    "browseButton": "Browse",
+    "openFilterAria": "Filter oeffnen",
+    "filterTitle": "Kategorien filtern",
+    "closeFilterAria": "Filter schliessen",
+    "notificationNewHabit": "Neue Gewohnheit \"{{name}}\" wurde erstellt!",
+    "emailChangeNotice": "Eine Bestaetigungsemail wurde an {{email}} gesendet.",
+    "profileSaveErrorLocal": "Profil konnte nicht gespeichert werden. Die Aenderungen wurden lokal gesichert.",
+    "habitCreateError": "Fehler beim Erstellen der Habit:",
+    "habitDeleteError": "Habit konnte nicht geloescht werden",
+    "habitUpdateError": "Habit konnte nicht aktualisiert werden",
+    "checkinError": "Check-in konnte nicht gespeichert werden",
+    "suggestedHabitSaveError": "Vorgeschlagenes Habit konnte nicht gespeichert werden",
+    "loadHabitsError": "Habits konnten nicht geladen werden",
+    "resetCheckinsError": "Reset der Check-ins fehlgeschlagen"
+  },
+  "profile": {
+    "account": "Account",
+    "title": "Profil bearbeiten",
+    "description": "Passe hier deinen Namen, Sprache, E-Mail und Passwort an. Aktiviere zusaetzlich die Zwei-Faktor-Authentifizierung, um dein Konto fuer zukuenftige Logins extra zu schuetzen.",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "currentPassword": "Aktuelles Passwort",
+    "currentPasswordPlaceholder": "Nur fuer E-Mail-Aenderungen erforderlich",
+    "language": "Sprache",
+    "password": "Passwort",
+    "newPasswordPlaceholder": "Neues Passwort eingeben",
+    "confirmPassword": "Neues Passwort bestaetigen",
+    "confirmPasswordPlaceholder": "Passwort erneut eingeben",
+    "twoFactor": "Zwei-Faktor-Authentifizierung",
+    "twoFactorDescription": "Schuetze dein Konto zusaetzlich fuer zukuenftige Logins.",
+    "notifications": "Benachrichtigungen",
+    "notificationsDescription": "Erhalte Hinweise, wenn neue Gewohnheiten oder Updates eintreffen.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "back": "Zurueck"
+  },
+  "filter": {
+    "clear": "Clear",
+    "apply": "Apply"
+  },
+  "browse": {
+    "title": "Vorgeschlagene Habits",
+    "close": "x",
+    "suggestions": [
+      { "name": "Morgendliche Bewegung", "category": "Health & Fitness", "timeRange": "Morgen" },
+      { "name": "30 Minuten lesen", "category": "Learning", "timeRange": "Abend" },
+      { "name": "Meditieren", "category": "Wellness", "timeRange": "Morgen" },
+      { "name": "8 Glaeser Wasser trinken", "category": "Health & Fitness", "timeRange": "Nachmittag" },
+      { "name": "Tagebuch schreiben", "category": "Mental Health", "timeRange": "Abend" },
+      { "name": "Frueh schlafen (bis 22 Uhr)", "category": "Sleep", "timeRange": "Abend" },
+      { "name": "Kein Social Media nach 20 Uhr", "category": "Wellness", "timeRange": "Abend" },
+      { "name": "Vitamine einnehmen", "category": "Health & Fitness", "timeRange": "Morgen" },
+      { "name": "10.000 Schritte gehen", "category": "Exercise", "timeRange": "Nachmittag" },
+      { "name": "Dankbarkeit ueben", "category": "Mental Health", "timeRange": "Morgen" }
+    ]
+  },
+  "habitCard": {
+    "empty": "Noch keine Habits angelegt.",
+    "markDoneAria": "Habit als erledigt markieren",
+    "deleteAria": "Habit loeschen",
+    "editAria": "Habit bearbeiten",
+    "editDialogAria": "Habit bearbeiten",
+    "nameLabel": "Name des Habits",
+    "categoryLabel": "Kategorie",
+    "dailyGoalLabel": "Ziel pro Tag",
+    "reminderLabel": "Reminder / Benachrichtigung",
+    "reminderHint": "Aktiviert Hinweise fuer dieses Habit.",
+    "timeRangeLabel": "Zeitbereich",
+    "save": "Speichern",
+    "discard": "Verwerfen",
+    "dayStreak": "{{count}} Tage Streak",
+    "complete": "{{done}}/{{total}} erledigt",
+    "doneToday": "Heute erledigt",
+    "openToday": "Heute offen"
+  },
+  "calendar": {
+    "aria": "Habit Details und Kalender",
+    "eyebrow": "Detail",
+    "selectHabit": "Habit auswaehlen",
+    "overview": "Uebersicht",
+    "streak": "Streak",
+    "month": "Monat",
+    "prevMonthAria": "Vorheriger Monat",
+    "nextMonthAria": "Naechster Monat",
+    "completedDays": "Erledigte Tage",
+    "monthlyAverage": "Durchschnitt pro Monat",
+    "weekdays": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+  },
+  "validation": {
+    "habitNameEmpty": "Habit-Name darf nicht leer sein"
+  },
+  "mappings": {
+    "category": {
+      "General": "Allgemein",
+      "Health & Fitness": "Gesundheit & Fitness",
+      "Wellness": "Wellness",
+      "Learning": "Lernen",
+      "Mental Health": "Mentale Gesundheit",
+      "Sleep": "Schlaf",
+      "Exercise": "Bewegung",
+      "Work": "Arbeit",
+      "Daily Routine": "Alltaegliche Routine"
+    },
+    "timeRange": {
+      "Morgen": "Morgen",
+      "Nachmittag": "Nachmittag",
+      "Abend": "Abend"
+    }
+  }
+}

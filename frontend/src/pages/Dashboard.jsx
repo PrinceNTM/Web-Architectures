@@ -8,8 +8,10 @@ import Sidebar from '../components/Sidebar.jsx'
 import { normalizeUser, readStoredUser, writeStoredUser } from '../utils/profileStorage.js'
 import { buildHabitUpdatePayload, normalizeHabits, readStoredHabits, writeStoredHabits } from '../utils/habitStorage.js'
 import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles.js'
+import { mapProfileLanguageToLocale, useI18n } from '../i18n/index.js'
 
 function Dashboard({ onLogout, user, onUserChange }) {
+  const { t, setLocale, getSectionLabel, getCategoryLabel } = useI18n()
   const [habits, setHabits] = useState(() => readStoredHabits())
   const [currentDate, setCurrentDate] = useState(new Date())
   const [newHabitInput, setNewHabitInput] = useState('')
@@ -88,7 +90,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
         setHabits(refreshed)
         writeStoredHabits(refreshed)
       } catch (error) {
-        console.error('Reset der Check-ins fehlgeschlagen', error)
+        console.error(t('dashboard.resetCheckinsError'), error)
       } finally {
         window.localStorage.setItem('habit-tracker-last-reset-date', today)
       }
@@ -120,7 +122,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
         setHabits(hydratedHabits)
         writeStoredHabits(hydratedHabits)
       } catch (error) {
-        console.error('Habits konnten nicht geladen werden', error)
+        console.error(t('dashboard.loadHabitsError'), error)
         const fallbackHabits = readStoredHabits()
         if (fallbackHabits.length > 0) {
           setHabits(fallbackHabits)
@@ -159,9 +161,9 @@ function Dashboard({ onLogout, user, onUserChange }) {
         ? prevHabits
         : [...prevHabits, newHabit],
     )
-    setNotification(`Neue Gewohnheit "${newHabit.name}" wurde erstellt!`)
+    setNotification(t('dashboard.notificationNewHabit', { name: newHabit.name }))
     setShowNotification(true)
-  }, [])
+  }, [t])
 
   const resetProfileDraft = () => {
     setProfile(savedProfile)
@@ -215,12 +217,13 @@ function Dashboard({ onLogout, user, onUserChange }) {
       const persistedUser = normalizeUser(response.data)
       writeStoredUser(persistedUser)
       onUserChange?.(persistedUser)
+      setLocale(mapProfileLanguageToLocale(persistedUser.language))
       setSavedProfile({ ...nextProfile, ...persistedUser, currentPassword: '' })
       setProfile({ ...nextProfile, ...persistedUser, currentPassword: '' })
       setLastSavedEmail(persistedUser.email)
 
       if (persistedUser.email !== lastSavedEmail) {
-        setNotification(`Eine Bestaetigungsemail wurde an ${persistedUser.email} gesendet.`)
+        setNotification(t('dashboard.emailChangeNotice', { email: persistedUser.email }))
         setShowNotification(true)
       }
     } catch (error) {
@@ -228,9 +231,10 @@ function Dashboard({ onLogout, user, onUserChange }) {
       const fallbackUser = normalizeUser({ ...savedProfile, ...profile, email: profile.email, firstName: profile.firstName, lastName: profile.lastName, language: profile.language })
       writeStoredUser(fallbackUser)
       onUserChange?.(fallbackUser)
+      setLocale(mapProfileLanguageToLocale(fallbackUser.language))
       setSavedProfile({ ...nextProfile, ...fallbackUser, currentPassword: '' })
       setProfile({ ...nextProfile, ...fallbackUser, currentPassword: '' })
-      setNotification('Profil konnte nicht gespeichert werden. Die Änderungen wurden lokal gesichert.')
+      setNotification(t('dashboard.profileSaveErrorLocal'))
       setShowNotification(true)
     } finally {
       setCurrentPage('dashboard')
@@ -259,18 +263,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
     return initials || 'ND'
   }
 
-  const suggestedHabits = [
-    { name: 'Morning exercise', category: 'Health & Fitness' },
-    { name: 'Read for 30 minutes', category: 'Learning' },
-    { name: 'Meditate', category: 'Wellness' },
-    { name: 'Drink 8 glasses of water', category: 'Health & Fitness' },
-    { name: 'Journal', category: 'Mental Health' },
-    { name: 'Early sleep (by 10 PM)', category: 'Sleep' },
-    { name: 'No social media after 8 PM', category: 'Wellness' },
-    { name: 'Take vitamins', category: 'Health & Fitness' },
-    { name: 'Walk 10,000 steps', category: 'Exercise' },
-    { name: 'Practice gratitude', category: 'Mental Health' },
-  ]
+  const suggestedHabits = t('browse.suggestions', {}, [])
 
   const addHabit = async () => {
     if (newHabitInput.trim() === '') return
@@ -295,7 +288,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
       })
       setNewHabitInput('')
     } catch (error) {
-      console.error('Fehler beim Erstellen der Habit:', error)
+      console.error(t('dashboard.habitCreateError'), error)
       const fallbackHabit = {
         id: Date.now(),
         name: newHabitInput,
@@ -327,7 +320,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
       setHabits(nextHabits)
       writeStoredHabits(nextHabits)
     } catch (error) {
-      console.error('Habit konnte nicht gelöscht werden', error)
+      console.error(t('dashboard.habitDeleteError'), error)
     }
   }
 
@@ -339,7 +332,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
 
   const handleSaveHabit = (id) => {
     if (editedHabitName.trim() === '') {
-      alert('Habit name cannot be empty')
+      alert(t('validation.habitNameEmpty'))
       return
     }
     setHabits((prevHabits) => prevHabits.map((habit) => (habit.id === id ? { ...habit, name: editedHabitName } : habit)))
@@ -362,7 +355,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
       writeStoredHabits(nextHabits)
       setSelectedHabitId(id)
     } catch (error) {
-      console.error('Habit konnte nicht aktualisiert werden', error)
+      console.error(t('dashboard.habitUpdateError'), error)
     }
   }
 
@@ -399,7 +392,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
       writeStoredHabits(nextHabits)
       setSelectedHabitId(id)
     } catch (error) {
-      console.error('Check-in konnte nicht gespeichert werden', error)
+      console.error(t('dashboard.checkinError'), error)
     }
   }
 
@@ -420,7 +413,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
       setSelectedHabitId(createdHabit.id)
       setShowSuggestions(false)
     } catch (error) {
-      console.error('Vorgeschlagenes Habit konnte nicht gespeichert werden', error)
+      console.error(t('dashboard.suggestedHabitSaveError'), error)
     }
   }
 
@@ -447,6 +440,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
   })()
 
   const selectedHabit = visibleHabits.find((habit) => habit.id === selectedHabitId) || visibleHabits[0] || habits[0]
+  const activeSectionLabel = getSectionLabel(activeSection)
   const completedDays = selectedHabit ? buildCompletedDays(selectedHabit, currentDate) : []
   const completedToday = habits.filter((habit) => habit.isChecked).length
   const totalStreaks = habits.reduce((sum, habit) => sum + habit.streak, 0)
@@ -455,23 +449,22 @@ function Dashboard({ onLogout, user, onUserChange }) {
     return (
       <div className="app-container profile-page">
         <div className="profile-header">
-          <button className="back-btn" onClick={handleCancelProfile}>Zurueck</button>
+          <button className="back-btn" onClick={handleCancelProfile}>{t('profile.back')}</button>
           <div>
-            <p className="eyebrow">Account</p>
-            <h1>Profil bearbeiten</h1>
+            <p className="eyebrow">{t('profile.account')}</p>
+            <h1>{t('profile.title')}</h1>
           </div>
         </div>
 
         <div className="profile-card">
           <p className="profile-description">
-            Passe hier deinen Namen, Sprache, E-Mail und Passwort an. Aktiviere zusaetzlich die Zwei-Faktor-Authentifizierung,
-            um dein Konto fuer zukuenftige Logins extra zu schuetzen.
+            {t('profile.description')}
           </p>
 
           <form className="profile-form" onSubmit={handleSaveProfile}>
             <div className="form-field name-row">
               <div className="name-field">
-                <label className="form-label" htmlFor="firstName">Vorname</label>
+                <label className="form-label" htmlFor="firstName">{t('profile.firstName')}</label>
                 <input
                   id="firstName"
                   className="form-input"
@@ -480,7 +473,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
                 />
               </div>
               <div className="name-field">
-                <label className="form-label" htmlFor="lastName">Nachname</label>
+                <label className="form-label" htmlFor="lastName">{t('profile.lastName')}</label>
                 <input
                   id="lastName"
                   className="form-input"
@@ -491,7 +484,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="email">E-Mail-Adresse</label>
+              <label className="form-label" htmlFor="email">{t('profile.email')}</label>
               <input
                 id="email"
                 type="email"
@@ -502,50 +495,49 @@ function Dashboard({ onLogout, user, onUserChange }) {
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="currentPassword">Aktuelles Passwort</label>
+              <label className="form-label" htmlFor="currentPassword">{t('profile.currentPassword')}</label>
               <input
                 id="currentPassword"
                 type="password"
                 className="form-input"
-                placeholder="Nur fuer E-Mail-Aenderungen erforderlich"
+                placeholder={t('profile.currentPasswordPlaceholder')}
                 value={profile.currentPassword}
                 onChange={(event) => setProfile({ ...profile, currentPassword: event.target.value })}
               />
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="language">Sprache</label>
+              <label className="form-label" htmlFor="language">{t('profile.language')}</label>
               <select
                 id="language"
                 className="form-input"
                 value={profile.language}
                 onChange={(event) => setProfile({ ...profile, language: event.target.value })}
               >
-                <option>Deutsch</option>
-                <option>English</option>
-                <option>Francais</option>
+                <option value="Deutsch">Deutsch</option>
+                <option value="English">English</option>
               </select>
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="password">Passwort</label>
+              <label className="form-label" htmlFor="password">{t('profile.password')}</label>
               <input
                 id="password"
                 type="password"
                 className="form-input"
-                placeholder="Neues Passwort eingeben"
+                placeholder={t('profile.newPasswordPlaceholder')}
                 value={profile.password}
                 onChange={(event) => setProfile({ ...profile, password: event.target.value })}
               />
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="confirmPassword">Neues Passwort bestaetigen</label>
+              <label className="form-label" htmlFor="confirmPassword">{t('profile.confirmPassword')}</label>
               <input
                 id="confirmPassword"
                 type="password"
                 className="form-input"
-                placeholder="Passwort erneut eingeben"
+                placeholder={t('profile.confirmPasswordPlaceholder')}
                 value={profile.confirmPassword}
                 onChange={(event) => setProfile({ ...profile, confirmPassword: event.target.value })}
               />
@@ -553,8 +545,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
 
             <div className="form-field toggle-row">
               <div>
-                <label className="form-label">Zwei-Faktor-Authentifizierung</label>
-                <p className="toggle-description">Schuetze dein Konto zusaetzlich fuer zukuenftige Logins.</p>
+                <label className="form-label">{t('profile.twoFactor')}</label>
+                <p className="toggle-description">{t('profile.twoFactorDescription')}</p>
               </div>
               <label className="toggle-switch">
                 <input
@@ -568,8 +560,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
 
             <div className="form-field toggle-row profile-subsetting">
               <div>
-                <label className="form-label">Benachrichtigungen</label>
-                <p className="toggle-description">Erhalte Hinweise, wenn neue Gewohnheiten oder Updates eintreffen.</p>
+                <label className="form-label">{t('profile.notifications')}</label>
+                <p className="toggle-description">{t('profile.notificationsDescription')}</p>
               </div>
               <label className="toggle-switch">
                 <input
@@ -582,8 +574,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
             </div>
 
             <div className="profile-actions">
-              <button className="save-btn" type="submit">Speichern</button>
-              <button className="cancel-btn" type="button" onClick={handleCancelProfile}>Abbrechen</button>
+              <button className="save-btn" type="submit">{t('profile.save')}</button>
+              <button className="cancel-btn" type="button" onClick={handleCancelProfile}>{t('profile.cancel')}</button>
             </div>
           </form>
         </div>
@@ -618,26 +610,26 @@ function Dashboard({ onLogout, user, onUserChange }) {
         <main className="main-panel">
           <div className="main-header">
             <div>
-              <p className="eyebrow">Daily Habits</p>
-              <h1>{activeSection === 'all' || activeSection === 'resources' ? 'Alle Habits' : activeSection}</h1>
+              <p className="eyebrow">{t('dashboard.eyebrow')}</p>
+              <h1>{activeSection === 'all' || activeSection === 'resources' ? t('dashboard.allHabits') : activeSectionLabel}</h1>
             </div>
             <div className="header-metrics">
               <div>
-                <span>Heute</span>
+                <span>{t('dashboard.today')}</span>
                 <strong>{completedToday}/{habits.length}</strong>
               </div>
               <div>
-                <span>Streaks</span>
+                <span>{t('dashboard.streaks')}</span>
                 <strong>{totalStreaks}</strong>
               </div>
             </div>
           </div>
 
-          <section className="composer-panel" aria-label="Habit erstellen">
+          <section className="composer-panel" aria-label={t('dashboard.composerAria')}>
             <input
               id="new-habit-input"
               type="text"
-              placeholder="Enter a new habit..."
+              placeholder={t('dashboard.newHabitPlaceholder')}
               className="habit-input"
               data-cy="new-habit-input"
               value={newHabitInput}
@@ -645,8 +637,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
               onKeyDown={handleKeyPress}
             />
             <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit} type="button">+</button>
-            <button className="browse-btn" onClick={() => setShowSuggestions((prev) => !prev)} type="button">Browse</button>
-            <button className="icon-btn" onClick={openCategoryFilter} type="button" aria-label="Filter öffnen">
+            <button className="browse-btn" onClick={() => setShowSuggestions((prev) => !prev)} type="button">{t('dashboard.browseButton')}</button>
+            <button className="icon-btn" onClick={openCategoryFilter} type="button" aria-label={t('dashboard.openFilterAria')}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
@@ -657,8 +649,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
             <div className="filter-popout-overlay" role="dialog" aria-modal="true" onClick={closeCategoryFilter}>
               <div className="filter-popout" onClick={(event) => event.stopPropagation()}>
                 <div className="filter-popout-header">
-                  <h3>Kategorien filtern</h3>
-                  <button className="icon-btn" type="button" onClick={closeCategoryFilter} aria-label="Filter schließen">×</button>
+                  <h3>{t('dashboard.filterTitle')}</h3>
+                  <button className="icon-btn" type="button" onClick={closeCategoryFilter} aria-label={t('dashboard.closeFilterAria')}>×</button>
                 </div>
                 <div className="filter-list">
                   {categories.map((category) => {
@@ -671,7 +663,7 @@ function Dashboard({ onLogout, user, onUserChange }) {
                         style={getCategoryStyle(category, darkMode ? 'dark' : 'light')}
                         onClick={() => togglePendingCategory(category)}
                       >
-                        <span className="filter-item-label">{category}</span>
+                        <span className="filter-item-label">{getCategoryLabel(category)}</span>
                         <span className={`filter-item-check ${active ? 'active' : ''}`} aria-hidden="true">
                           {active ? '✓' : ''}
                         </span>
@@ -680,8 +672,8 @@ function Dashboard({ onLogout, user, onUserChange }) {
                   })}
                 </div>
                 <div className="filter-popout-actions">
-                  <button className="cancel-btn" type="button" onClick={clearCategoryFilters}>Clear</button>
-                  <button className="save-btn" type="button" onClick={applyCategoryFilters}>Apply</button>
+                  <button className="cancel-btn" type="button" onClick={clearCategoryFilters}>{t('filter.clear')}</button>
+                  <button className="save-btn" type="button" onClick={applyCategoryFilters}>{t('filter.apply')}</button>
                 </div>
               </div>
             </div>
@@ -691,15 +683,15 @@ function Dashboard({ onLogout, user, onUserChange }) {
             <div className="suggestions-modal" role="dialog" aria-modal="true">
               <div className="suggestions-card">
                 <div className="suggestions-header">
-                  <h3>Suggested Habits</h3>
-                  <button className="close-btn" onClick={() => setShowSuggestions(false)} type="button">x</button>
+                  <h3>{t('browse.title')}</h3>
+                  <button className="close-btn" onClick={() => setShowSuggestions(false)} type="button">{t('browse.close')}</button>
                 </div>
                 <div className="suggestions-list">
                   {suggestedHabits.map((suggestion, index) => (
                     <button key={index} className="suggestion-item" onClick={() => addSuggestedHabit(suggestion)} type="button">
                       <span>
                         <strong>{suggestion.name}</strong>
-                        <small>{suggestion.category}</small>
+                        <small>{getCategoryLabel(suggestion.category)}</small>
                       </span>
                       <b>+</b>
                     </button>

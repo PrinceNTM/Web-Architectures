@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles'
+import { useI18n } from '../i18n/index.js'
 
 function HabitCards({
   habits,
@@ -10,6 +11,7 @@ function HabitCards({
   onUpdateHabit,
   theme = 'light',
 }) {
+  const { t, getCategoryLabel, getTimeRangeLabel, getHabitNameLabel } = useI18n()
   const [openSettingsId, setOpenSettingsId] = useState(null)
   const [draftHabit, setDraftHabit] = useState(null)
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
@@ -76,7 +78,7 @@ function HabitCards({
   if (habits.length === 0) {
     return (
       <div className="empty-state">
-        <p>Noch keine Habits angelegt.</p>
+        <p>{t('habitCard.empty')}</p>
       </div>
     )
   }
@@ -104,33 +106,35 @@ function HabitCards({
                 event.stopPropagation()
                 onToggleHabit(habit.id)
               }}
-              aria-label="Habit als erledigt markieren"
+              aria-label={t('habitCard.markDoneAria')}
             >
               {habit.isChecked ? '✓' : ''}
             </button>
 
             <div className="habit-main">
               <div className="habit-title-row">
-                <h3 data-cy="habit-name">{habit.name}</h3>
-                <span className="habit-category">{habit.category}</span>
-                {habit.timeRange && <span className="habit-category muted">{habit.timeRange}</span>}
+                <h3 data-cy="habit-name">{getHabitNameLabel(habit.name)}</h3>
+                <span className="habit-category">{getCategoryLabel(habit.category)}</span>
+                {habit.timeRange && <span className="habit-category muted">{getTimeRangeLabel(habit.timeRange)}</span>}
               </div>
               <div className="habit-progress">
                 <span style={{ width: `${progressValue}%` }} />
               </div>
               <div className="habit-meta">
-                <span>{habit.streak} day streak</span>
-                {habit.total > 0 ? <span>{habit.completedCount}/{habit.total} complete</span> : <span>{habit.isChecked ? 'Done today' : 'Open today'}</span>}
+                <span>{t('habitCard.dayStreak', { count: habit.streak })}</span>
+                {habit.total > 0
+                  ? <span>{t('habitCard.complete', { done: habit.completedCount, total: habit.total })}</span>
+                  : <span>{habit.isChecked ? t('habitCard.doneToday') : t('habitCard.openToday')}</span>}
               </div>
             </div>
 
             <div className="habit-actions" onClick={(event) => event.stopPropagation()}>
-              <button className="icon-btn" type="button" onClick={() => onDeleteHabit(habit.id)} aria-label="Habit loeschen">x</button>
+              <button className="icon-btn" type="button" onClick={() => onDeleteHabit(habit.id)} aria-label={t('habitCard.deleteAria')}>x</button>
               <button
                 className="icon-btn"
                 type="button"
                 onClick={() => (isSettingsOpen ? closeHabitSettings() : openHabitSettings(habit))}
-                aria-label="Habit bearbeiten"
+                aria-label={t('habitCard.editAria')}
                 aria-expanded={isSettingsOpen}
               >
                 <svg className="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -147,11 +151,11 @@ function HabitCards({
                   className="habit-popout"
                   role="dialog"
                   aria-modal="true"
-                  aria-label="Habit bearbeiten"
+                  aria-label={t('habitCard.editDialogAria')}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="popout-field">
-                    <label htmlFor={`habit-name-${habit.id}`}>Name des Habits</label>
+                    <label htmlFor={`habit-name-${habit.id}`}>{t('habitCard.nameLabel')}</label>
                     <input
                       id={`habit-name-${habit.id}`}
                       value={draftHabit.name}
@@ -160,7 +164,7 @@ function HabitCards({
                   </div>
 
                   <div className="popout-field">
-                    <label htmlFor={`habit-category-${habit.id}`}>Kategorie</label>
+                    <label htmlFor={`habit-category-${habit.id}`}>{t('habitCard.categoryLabel')}</label>
                     <div className="custom-dropdown" ref={dropdownRef} id={`habit-category-${habit.id}-container`}>
                       <button
                         type="button"
@@ -169,7 +173,7 @@ function HabitCards({
                         onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
                         aria-expanded={categoryDropdownOpen}
                       >
-                        <span className="dropdown-trigger-label">{draftHabit.category}</span>
+                        <span className="dropdown-trigger-label">{getCategoryLabel(draftHabit.category)}</span>
                         <span className="dropdown-arrow">▼</span>
                       </button>
 
@@ -188,7 +192,7 @@ function HabitCards({
                                   setCategoryDropdownOpen(false)
                                 }}
                               >
-                                <span className="dropdown-option-label">{category}</span>
+                                <span className="dropdown-option-label">{getCategoryLabel(category)}</span>
                                 <span className={`dropdown-option-check ${isSelected ? 'active' : ''}`} aria-hidden="true">
                                   {isSelected ? '✓' : ''}
                                 </span>
@@ -201,7 +205,7 @@ function HabitCards({
                   </div>
 
                   <div className="popout-field">
-                    <label htmlFor={`habit-goal-${habit.id}`}>Ziel pro Tag</label>
+                    <label htmlFor={`habit-goal-${habit.id}`}>{t('habitCard.dailyGoalLabel')}</label>
                     <input
                       id={`habit-goal-${habit.id}`}
                       inputMode="numeric"
@@ -212,8 +216,8 @@ function HabitCards({
 
                   <div className="popout-toggle">
                     <div>
-                      <span>Reminder / Benachrichtigung</span>
-                      <small>Aktiviert Hinweise fuer dieses Habit.</small>
+                      <span>{t('habitCard.reminderLabel')}</span>
+                      <small>{t('habitCard.reminderHint')}</small>
                     </div>
                     <label className="compact-switch">
                       <input
@@ -226,19 +230,19 @@ function HabitCards({
                   </div>
 
                   <div className="popout-field">
-                    <label htmlFor={`habit-time-${habit.id}`}>Zeitbereich</label>
+                    <label htmlFor={`habit-time-${habit.id}`}>{t('habitCard.timeRangeLabel')}</label>
                     <select
                       id={`habit-time-${habit.id}`}
                       value={draftHabit.timeRange}
                       onChange={(event) => setDraftHabit({ ...draftHabit, timeRange: event.target.value })}
                     >
-                      {timeRanges.map((range) => <option key={range}>{range}</option>)}
+                      {timeRanges.map((range) => <option key={range} value={range}>{getTimeRangeLabel(range)}</option>)}
                     </select>
                   </div>
 
                   <div className="popout-actions">
-                    <button className="popout-save" type="button" onClick={() => saveHabitSettings(habit.id)}>Speichern</button>
-                    <button className="popout-discard" type="button" onClick={closeHabitSettings}>Verwerfen</button>
+                    <button className="popout-save" type="button" onClick={() => saveHabitSettings(habit.id)}>{t('habitCard.save')}</button>
+                    <button className="popout-discard" type="button" onClick={closeHabitSettings}>{t('habitCard.discard')}</button>
                   </div>
                 </div>
               </div>

@@ -1,6 +1,12 @@
 const STORAGE_KEY = 'habit-tracker-user'
 const MEMORY_STORE = Symbol.for('habit-tracker-user-store')
 
+const normalizeLanguage = (language) => {
+  const value = String(language || '').trim().toLowerCase()
+  if (value === 'english' || value === 'en') return 'English'
+  return 'Deutsch'
+}
+
 const getStorage = () => {
   if (typeof globalThis !== 'undefined') {
     if (!globalThis[MEMORY_STORE]) {
@@ -25,7 +31,7 @@ export const normalizeUser = (user = {}) => ({
   email: user.email || '',
   firstName: user.firstName || '',
   lastName: user.lastName || '',
-  language: user.language || 'Deutsch',
+  language: normalizeLanguage(user.language),
 })
 
 export const writeStoredUser = (user) => {

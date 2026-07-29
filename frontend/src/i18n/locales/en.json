@@ -1,0 +1,143 @@
+{
+  "app": {
+    "loadingAuth": "Checking authentication..."
+  },
+  "sections": {
+    "all": "All Habits",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "evening": "Evening",
+    "resources": "Resources / Help"
+  },
+  "sidebar": {
+    "defaultProfileName": "Daily Habits",
+    "mainNavAria": "Main navigation",
+    "habitAreasAria": "Habit sections",
+    "overviewHint": "Overview",
+    "timeRangeHint": "Time range",
+    "supportHint": "Support",
+    "themeTitle": "Light / Dark",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "toggleThemeAria": "Toggle light dark mode",
+    "editProfile": "Edit profile",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "eyebrow": "Daily Habits",
+    "allHabits": "All Habits",
+    "today": "Today",
+    "streaks": "Streaks",
+    "composerAria": "Create habit",
+    "newHabitPlaceholder": "Enter a new habit...",
+    "browseButton": "Browse",
+    "openFilterAria": "Open filter",
+    "filterTitle": "Filter categories",
+    "closeFilterAria": "Close filter",
+    "notificationNewHabit": "New habit \"{{name}}\" was created!",
+    "emailChangeNotice": "A confirmation email was sent to {{email}}.",
+    "profileSaveErrorLocal": "Profile could not be saved. Changes were stored locally.",
+    "habitCreateError": "Failed to create habit:",
+    "habitDeleteError": "Could not delete habit",
+    "habitUpdateError": "Could not update habit",
+    "checkinError": "Could not save check-in",
+    "suggestedHabitSaveError": "Could not save suggested habit",
+    "loadHabitsError": "Could not load habits",
+    "resetCheckinsError": "Failed to reset check-ins"
+  },
+  "profile": {
+    "account": "Account",
+    "title": "Edit profile",
+    "description": "Update your name, language, email, and password here. You can also enable two-factor authentication to better protect future logins.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email address",
+    "currentPassword": "Current password",
+    "currentPasswordPlaceholder": "Required only for email changes",
+    "language": "Language",
+    "password": "Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPassword": "Confirm new password",
+    "confirmPasswordPlaceholder": "Enter password again",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorDescription": "Add extra protection for future logins.",
+    "notifications": "Notifications",
+    "notificationsDescription": "Get updates when new habits or realtime events arrive.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back"
+  },
+  "filter": {
+    "clear": "Clear",
+    "apply": "Apply"
+  },
+  "browse": {
+    "title": "Suggested Habits",
+    "close": "x",
+    "suggestions": [
+      { "name": "Morning exercise", "category": "Health & Fitness", "timeRange": "Morgen" },
+      { "name": "Read for 30 minutes", "category": "Learning", "timeRange": "Abend" },
+      { "name": "Meditate", "category": "Wellness", "timeRange": "Morgen" },
+      { "name": "Drink 8 glasses of water", "category": "Health & Fitness", "timeRange": "Nachmittag" },
+      { "name": "Journal", "category": "Mental Health", "timeRange": "Abend" },
+      { "name": "Sleep early (by 10 PM)", "category": "Sleep", "timeRange": "Abend" },
+      { "name": "No social media after 8 PM", "category": "Wellness", "timeRange": "Abend" },
+      { "name": "Take vitamins", "category": "Health & Fitness", "timeRange": "Morgen" },
+      { "name": "Walk 10,000 steps", "category": "Exercise", "timeRange": "Nachmittag" },
+      { "name": "Practice gratitude", "category": "Mental Health", "timeRange": "Morgen" }
+    ]
+  },
+  "habitCard": {
+    "empty": "No habits created yet.",
+    "markDoneAria": "Mark habit as done",
+    "deleteAria": "Delete habit",
+    "editAria": "Edit habit",
+    "editDialogAria": "Edit habit",
+    "nameLabel": "Habit name",
+    "categoryLabel": "Category",
+    "dailyGoalLabel": "Goal per day",
+    "reminderLabel": "Reminder / Notification",
+    "reminderHint": "Enable reminders for this habit.",
+    "timeRangeLabel": "Time range",
+    "save": "Save",
+    "discard": "Discard",
+    "dayStreak": "{{count}} day streak",
+    "complete": "{{done}}/{{total}} complete",
+    "doneToday": "Done today",
+    "openToday": "Open today"
+  },
+  "calendar": {
+    "aria": "Habit details and calendar",
+    "eyebrow": "Detail",
+    "selectHabit": "Select habit",
+    "overview": "Overview",
+    "streak": "Streak",
+    "month": "Month",
+    "prevMonthAria": "Previous month",
+    "nextMonthAria": "Next month",
+    "completedDays": "Completed days",
+    "monthlyAverage": "Average per month",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  },
+  "validation": {
+    "habitNameEmpty": "Habit name cannot be empty"
+  },
+  "mappings": {
+    "category": {
+      "General": "General",
+      "Health & Fitness": "Health & Fitness",
+      "Wellness": "Wellness",
+      "Learning": "Learning",
+      "Mental Health": "Mental Health",
+      "Sleep": "Sleep",
+      "Exercise": "Exercise",
+      "Work": "Work",
+      "Daily Routine": "Daily Routine"
+    },
+    "timeRange": {
+      "Morgen": "Morning",
+      "Nachmittag": "Afternoon",
+      "Abend": "Evening"
+    }
+  }
+}

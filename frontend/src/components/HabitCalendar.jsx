@@ -1,7 +1,9 @@
 import { getCategoryStyle } from '../utils/categoryStyles.js'
+import { useI18n } from '../i18n/index.js'
 
 function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextMonth, theme = 'light' }) {
-  const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+  const { t, getCategoryLabel, getDateLocale, getHabitNameLabel } = useI18n()
+  const weekdays = t('calendar.weekdays', {}, [])
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
   const firstDay = (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() + 6) % 7
   const today = new Date()
@@ -32,33 +34,33 @@ function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextM
   const monthlyAverage = daysInMonth > 0 ? Math.round((completedSet.size / daysInMonth) * 100) : 0
 
   return (
-    <aside className="detail-panel" aria-label="Habit Details und Kalender">
+    <aside className="detail-panel" aria-label={t('calendar.aria')}>
       <div className="detail-header">
         <div>
-          <p className="eyebrow">Detail</p>
-          <h2>{habit?.name || 'Habit auswaehlen'}</h2>
+          <p className="eyebrow">{t('calendar.eyebrow')}</p>
+          <h2>{habit?.name ? getHabitNameLabel(habit.name) : t('calendar.selectHabit')}</h2>
         </div>
-        <span className="detail-pill" style={getCategoryStyle(habit?.category, theme)}>{habit?.category || 'Overview'}</span>
+        <span className="detail-pill" style={getCategoryStyle(habit?.category, theme)}>{habit?.category ? getCategoryLabel(habit.category) : t('calendar.overview')}</span>
       </div>
 
       <div className="detail-stats">
         <div>
-          <span>Streak</span>
+          <span>{t('calendar.streak')}</span>
           <strong>{habit?.streak ?? 0}</strong>
         </div>
         <div>
-          <span>Monat</span>
+          <span>{t('calendar.month')}</span>
           <strong>{monthlyAverage}%</strong>
         </div>
       </div>
 
       <div className="calendar-shell">
         <div className="calendar-header">
-          <button className="month-nav" type="button" onClick={onPrevMonth} aria-label="Vorheriger Monat">‹</button>
+          <button className="month-nav" type="button" onClick={onPrevMonth} aria-label={t('calendar.prevMonthAria')}>‹</button>
           <h3 className="month-title">
-            {currentDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
+            {currentDate.toLocaleString(getDateLocale(), { month: 'long', year: 'numeric' })}
           </h3>
-          <button className="month-nav" type="button" onClick={onNextMonth} aria-label="Naechster Monat">›</button>
+          <button className="month-nav" type="button" onClick={onNextMonth} aria-label={t('calendar.nextMonthAria')}>›</button>
         </div>
 
         <div className="calendar-weekdays">
@@ -70,11 +72,11 @@ function HabitCalendar({ habit, currentDate, completedDays, onPrevMonth, onNextM
 
       <div className="calendar-summary">
         <div>
-          <span>Erledigte Tage</span>
+          <span>{t('calendar.completedDays')}</span>
           <strong>{completedSet.size}</strong>
         </div>
         <div>
-          <span>Durchschnitt pro Monat</span>
+          <span>{t('calendar.monthlyAverage')}</span>
           <strong>{monthlyAverage}%</strong>
         </div>
       </div>

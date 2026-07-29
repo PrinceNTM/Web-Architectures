@@ -48,6 +48,7 @@ export const updateUserProfile = async (req, res, next) => {
         id: true,
         email: true,
         password: true,
+        tokenVersion: true,
       },
     })
 
@@ -87,6 +88,7 @@ export const updateUserProfile = async (req, res, next) => {
         lastName: lastName?.trim() ?? '',
         email: normalizedEmail,
         language: language ?? 'Deutsch',
+        ...(emailChanged ? { tokenVersion: { increment: 1 } } : {}),
       },
       select: {
         id: true,
@@ -94,11 +96,12 @@ export const updateUserProfile = async (req, res, next) => {
         firstName: true,
         lastName: true,
         language: true,
+        tokenVersion: true,
       },
     })
 
     if (emailChanged) {
-      setAuthCookie(res, { userId: updatedUser.id, email: updatedUser.email })
+      setAuthCookie(res, { userId: updatedUser.id, email: updatedUser.email, tokenVersion: updatedUser.tokenVersion })
     }
 
     return res.json(toUserResponse(updatedUser))

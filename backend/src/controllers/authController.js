@@ -4,6 +4,7 @@ import { setAuthCookie, clearAuthCookie } from '../utils/authSession.js'
 import { validatePassword } from '../utils/validatePassword.js'
 
 const BCRYPT_SALT_ROUNDS = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10)
+const DUMMY_HASH = '$2b$12$C6UzMDM.H6dfI/f/IKcEe.O3Kq8c6i6Y4xT7xvFeoJEB6Digw1k3e'
 
 const invalidCredentialsResponse = (res) =>
   res.status(401).json({ error: 'E-Mail oder Passwort ungültig.' })
@@ -56,16 +57,12 @@ export const login = async (req, res, next) => {
     const normalizedEmail = email.toLowerCase()
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
 
-    if (!user) {
+    const passwordMatches = await bcrypt.compare(password, user ? user.password : DUMMY_HASH)
+    if (!user || !passwordMatches) {
       return invalidCredentialsResponse(res)
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password)
-    if (!passwordMatches) {
-      return invalidCredentialsResponse(res)
-    }
-
-    setAuthCookie(res, { userId: user.id, email: user.email })
+    setAuthCookie(res, { userId: user.id, email: user.email, tokenVersion: user.tokenVersion ?? 0 })
     return res.json({ id: user.id, email: user.email })
   } catch (error) {
     next(error)

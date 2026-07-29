@@ -1,10 +1,12 @@
+import zxcvbn from 'zxcvbn'
+
 export function validatePassword(pwd) {
   if (typeof pwd !== 'string') throw new TypeError('Password must be a string')
   const trimmed = pwd.trim()
-  if (trimmed.length < 8) return false
-  const hasLetter = /[A-Za-z]/.test(trimmed)
-  const hasNumber = /[0-9]/.test(trimmed)
-  return hasLetter && hasNumber
+  if (trimmed.length < 10) return false
+
+  const analysis = zxcvbn(trimmed)
+  return analysis.score >= 3
 }
 
 export default validatePassword

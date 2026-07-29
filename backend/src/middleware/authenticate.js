@@ -1,11 +1,12 @@
 import jwt from 'jsonwebtoken'
 import { logger } from '../utils/logger.js'
 import { TOKEN_NAME } from '../utils/authSession.js'
+import prisma from '../prisma.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
 const UNAUTHORIZED_ERROR = { error: 'Nicht autorisiert.' }
 
-export const authenticate = (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   const token = req.cookies?.[TOKEN_NAME]
 
   if (!token) {
@@ -18,10 +19,21 @@ export const authenticate = (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET)
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] })
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, tokenVersion: true },
+    })
+
+    if (!user || payload.tokenVersion !== user.tokenVersion) {
+      return res.status(401).json(UNAUTHORIZED_ERROR)
+    }
+
     req.user = {
-      userId: payload.userId,
-      email: payload.email,
+      userId: user.id,
+      email: user.email,
+      tokenVersion: user.tokenVersion,
     }
     next()
   } catch (error) {

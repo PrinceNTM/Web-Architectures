@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockVerify = vi.fn()
+const mockFindUnique = vi.fn()
 
 vi.mock('jsonwebtoken', () => ({
   default: {
     verify: (...args) => mockVerify(...args),
+  },
+}))
+
+vi.mock('../prisma.js', () => ({
+  default: {
+    user: {
+      findUnique: (...args) => mockFindUnique(...args),
+    },
   },
 }))
 
@@ -17,6 +26,7 @@ describe('authenticate middleware', () => {
   beforeEach(() => {
     vi.resetModules()
     mockVerify.mockReset()
+    mockFindUnique.mockReset()
     process.env.JWT_SECRET = 'test-secret'
   })
 
@@ -26,7 +36,7 @@ describe('authenticate middleware', () => {
     const res = createRes()
     const next = vi.fn()
 
-    authenticate(req, res, next)
+    await authenticate(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(401)
     expect(res.json).toHaveBeenCalledWith({ error: 'Nicht autorisiert.' })
@@ -40,7 +50,7 @@ describe('authenticate middleware', () => {
     const res = createRes()
     const next = vi.fn()
 
-    authenticate(req, res, next)
+    await authenticate(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(500)
     expect(res.json).toHaveBeenCalledWith({ error: 'Serverkonfiguration fehlerhaft.' })
@@ -48,17 +58,33 @@ describe('authenticate middleware', () => {
   })
 
   it('sets req.user and calls next when token is valid', async () => {
-    mockVerify.mockReturnValue({ userId: 'u1', email: 'user@example.com' })
+    mockVerify.mockReturnValue({ userId: 'u1', email: 'user@example.com', tokenVersion: 2 })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', tokenVersion: 2 })
     const { authenticate } = await import('./authenticate.js')
     const req = { cookies: { token: 'valid-token' }, query: {} }
     const res = createRes()
     const next = vi.fn()
 
-    authenticate(req, res, next)
+    await authenticate(req, res, next)
 
-    expect(mockVerify).toHaveBeenCalledWith('valid-token', 'test-secret')
-    expect(req.user).toEqual({ userId: 'u1', email: 'user@example.com' })
+    expect(mockVerify).toHaveBeenCalledWith('valid-token', 'test-secret', { algorithms: ['HS256'] })
+    expect(req.user).toEqual({ userId: 'u1', email: 'user@example.com', tokenVersion: 2 })
     expect(next).toHaveBeenCalled()
+  })
+
+  it('returns 401 when tokenVersion differs from current user version', async () => {
+    mockVerify.mockReturnValue({ userId: 'u1', email: 'user@example.com', tokenVersion: 1 })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', tokenVersion: 2 })
+    const { authenticate } = await import('./authenticate.js')
+    const req = { cookies: { token: 'stale-token' }, query: {} }
+    const res = createRes()
+    const next = vi.fn()
+
+    await authenticate(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Nicht autorisiert.' })
+    expect(next).not.toHaveBeenCalled()
   })
 
   it('returns 401 when token verification fails', async () => {
@@ -70,7 +96,7 @@ describe('authenticate middleware', () => {
     const res = createRes()
     const next = vi.fn()
 
-    authenticate(req, res, next)
+    await authenticate(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(401)
     expect(res.json).toHaveBeenCalledWith({ error: 'Nicht autorisiert.' })

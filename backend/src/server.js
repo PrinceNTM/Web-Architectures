@@ -65,7 +65,7 @@ const isAllowedOrigin = (origin) => {
     return false
   }
 
-  if (localHostnames.has(parsedOrigin.hostname)) {
+  if (process.env.NODE_ENV !== 'production' && localHostnames.has(parsedOrigin.hostname)) {
     return true
   }
 

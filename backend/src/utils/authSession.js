@@ -9,7 +9,7 @@ export const COOKIE_OPTIONS = {
   maxAge: 24 * 60 * 60 * 1000,
 }
 
-export const signSessionToken = ({ userId, email }) => {
+export const signSessionToken = ({ userId, email, tokenVersion = 0 }) => {
   const jwtSecret = process.env.JWT_SECRET
 
   if (!jwtSecret) {
@@ -20,9 +20,10 @@ export const signSessionToken = ({ userId, email }) => {
     {
       userId,
       email,
+      tokenVersion,
     },
     jwtSecret,
-    { expiresIn: '24h' },
+    { expiresIn: '24h', algorithm: 'HS256' },
   )
 }
 

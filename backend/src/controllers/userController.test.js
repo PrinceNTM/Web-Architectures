@@ -104,7 +104,7 @@ describe('userController', () => {
   })
 
   it('returns 409 when normalized email is already used', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash', tokenVersion: 0 })
     mockCompare.mockResolvedValue(true)
     mockFindFirst.mockResolvedValue({ id: 'u2' })
     const req = {
@@ -132,6 +132,7 @@ describe('userController', () => {
       firstName: 'Max',
       lastName: 'Mustermann',
       language: 'Deutsch',
+      tokenVersion: 1,
     })
     const req = {
       user: { userId: 'u1' },
@@ -164,7 +165,7 @@ describe('userController', () => {
       lastName: 'Mustermann',
       language: 'Deutsch',
     })
-    expect(mockSetAuthCookie).toHaveBeenCalledWith(res, { userId: 'u1', email: 'new@example.com' })
+    expect(mockSetAuthCookie).toHaveBeenCalledWith(res, { userId: 'u1', email: 'new@example.com', tokenVersion: 1 })
     expect(next).not.toHaveBeenCalled()
   })
 

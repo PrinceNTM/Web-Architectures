@@ -1,0 +1,68 @@
+/* Shared control primitives to keep buttons/inputs consistent across pages */
+
+.habit-input,
+.form-input,
+.edit-habit-input {
+  width: 100%;
+  min-height: var(--input-height);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  color: var(--text);
+  background: var(--panel);
+  outline: none;
+}
+
+.habit-input:focus,
+.form-input:focus,
+.edit-habit-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.add-btn,
+.browse-btn,
+.action-btn,
+.save-btn,
+.cancel-btn,
+.back-btn,
+.month-nav,
+.icon-btn,
+.close-btn {
+  min-height: var(--control-height-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--panel);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.add-btn,
+.action-btn.primary,
+.save-btn {
+  border-color: transparent;
+  color: #06110f;
+  font-weight: 800;
+  background: var(--accent);
+}
+
+.browse-btn,
+.action-btn,
+.cancel-btn,
+.back-btn {
+  padding: 0 14px;
+}
+
+.icon-btn {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.save-btn,
+.cancel-btn {
+  min-height: var(--control-height-lg);
+}

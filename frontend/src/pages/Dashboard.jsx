@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { authAPI, habitAPI } from '../services/api.js'
 import { socket } from '../services/socket.js'
 import HabitCalendar from '../components/HabitCalendar.jsx'
-import HabitCards from '../components/HabitCards.jsx'
 import RealtimeUpdates from '../components/RealtimeUpdates.jsx'
 import Sidebar from '../components/Sidebar.jsx'
+import ProfileEditor from '../components/dashboard/ProfileEditor.jsx'
+import DashboardMainPanel from '../components/dashboard/DashboardMainPanel.jsx'
 import { normalizeUser, readStoredUser, writeStoredUser } from '../utils/profileStorage.js'
 import { buildHabitUpdatePayload, normalizeHabits, readStoredHabits, writeStoredHabits } from '../utils/habitStorage.js'
-import { getCategoryClass, getCategoryStyle } from '../utils/categoryStyles.js'
 import { mapProfileLanguageToLocale, useI18n } from '../i18n/index.js'
 
 function Dashboard({ onLogout, user, onUserChange }) {
@@ -36,8 +36,6 @@ function Dashboard({ onLogout, user, onUserChange }) {
   const [notification, setNotification] = useState('')
   const [showNotification, setShowNotification] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [editingHabitId, setEditingHabitId] = useState(null)
-  const [editedHabitName, setEditedHabitName] = useState('')
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false)
   const [categoryFilters, setCategoryFilters] = useState([])
   const [pendingCategoryFilters, setPendingCategoryFilters] = useState([])
@@ -324,27 +322,6 @@ function Dashboard({ onLogout, user, onUserChange }) {
     }
   }
 
-  const handleEditHabit = (habit) => {
-    setSelectedHabitId(habit.id)
-    setEditingHabitId(habit.id)
-    setEditedHabitName(habit.name)
-  }
-
-  const handleSaveHabit = (id) => {
-    if (editedHabitName.trim() === '') {
-      alert(t('validation.habitNameEmpty'))
-      return
-    }
-    setHabits((prevHabits) => prevHabits.map((habit) => (habit.id === id ? { ...habit, name: editedHabitName } : habit)))
-    setEditingHabitId(null)
-    setEditedHabitName('')
-  }
-
-  const handleCancelEdit = () => {
-    setEditingHabitId(null)
-    setEditedHabitName('')
-  }
-
   const handleUpdateHabit = async (id, updates) => {
     try {
       const payload = buildHabitUpdatePayload(updates)
@@ -447,139 +424,15 @@ function Dashboard({ onLogout, user, onUserChange }) {
 
   if (currentPage === 'profile') {
     return (
-      <div className="app-container profile-page">
-        <div className="profile-header">
-          <button className="back-btn" onClick={handleCancelProfile}>{t('profile.back')}</button>
-          <div>
-            <p className="eyebrow">{t('profile.account')}</p>
-            <h1>{t('profile.title')}</h1>
-          </div>
-        </div>
-
-        <div className="profile-card">
-          <p className="profile-description">
-            {t('profile.description')}
-          </p>
-
-          <form className="profile-form" onSubmit={handleSaveProfile}>
-            <div className="form-field name-row">
-              <div className="name-field">
-                <label className="form-label" htmlFor="firstName">{t('profile.firstName')}</label>
-                <input
-                  id="firstName"
-                  className="form-input"
-                  value={profile.firstName}
-                  onChange={(event) => setProfile({ ...profile, firstName: event.target.value })}
-                />
-              </div>
-              <div className="name-field">
-                <label className="form-label" htmlFor="lastName">{t('profile.lastName')}</label>
-                <input
-                  id="lastName"
-                  className="form-input"
-                  value={profile.lastName}
-                  onChange={(event) => setProfile({ ...profile, lastName: event.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="email">{t('profile.email')}</label>
-              <input
-                id="email"
-                type="email"
-                className="form-input"
-                value={profile.email}
-                onChange={(event) => setProfile({ ...profile, email: event.target.value })}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="currentPassword">{t('profile.currentPassword')}</label>
-              <input
-                id="currentPassword"
-                type="password"
-                className="form-input"
-                placeholder={t('profile.currentPasswordPlaceholder')}
-                value={profile.currentPassword}
-                onChange={(event) => setProfile({ ...profile, currentPassword: event.target.value })}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="language">{t('profile.language')}</label>
-              <select
-                id="language"
-                className="form-input"
-                value={profile.language}
-                onChange={(event) => setProfile({ ...profile, language: event.target.value })}
-              >
-                <option value="Deutsch">Deutsch</option>
-                <option value="English">English</option>
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="password">{t('profile.password')}</label>
-              <input
-                id="password"
-                type="password"
-                className="form-input"
-                placeholder={t('profile.newPasswordPlaceholder')}
-                value={profile.password}
-                onChange={(event) => setProfile({ ...profile, password: event.target.value })}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label" htmlFor="confirmPassword">{t('profile.confirmPassword')}</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                className="form-input"
-                placeholder={t('profile.confirmPasswordPlaceholder')}
-                value={profile.confirmPassword}
-                onChange={(event) => setProfile({ ...profile, confirmPassword: event.target.value })}
-              />
-            </div>
-
-            <div className="form-field toggle-row">
-              <div>
-                <label className="form-label">{t('profile.twoFactor')}</label>
-                <p className="toggle-description">{t('profile.twoFactorDescription')}</p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={profile.twoFactor}
-                  onChange={(event) => setProfile({ ...profile, twoFactor: event.target.checked })}
-                />
-                <span className="slider" />
-              </label>
-            </div>
-
-            <div className="form-field toggle-row profile-subsetting">
-              <div>
-                <label className="form-label">{t('profile.notifications')}</label>
-                <p className="toggle-description">{t('profile.notificationsDescription')}</p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={(event) => setNotificationsEnabled(event.target.checked)}
-                />
-                <span className="slider" />
-              </label>
-            </div>
-
-            <div className="profile-actions">
-              <button className="save-btn" type="submit">{t('profile.save')}</button>
-              <button className="cancel-btn" type="button" onClick={handleCancelProfile}>{t('profile.cancel')}</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <ProfileEditor
+        t={t}
+        profile={profile}
+        notificationsEnabled={notificationsEnabled}
+        onProfileChange={setProfile}
+        onNotificationsEnabledChange={setNotificationsEnabled}
+        onSave={handleSaveProfile}
+        onCancel={handleCancelProfile}
+      />
     )
   }
 
@@ -607,110 +460,39 @@ function Dashboard({ onLogout, user, onUserChange }) {
           onSectionChange={setActiveSection}
         />
 
-        <main className="main-panel">
-          <div className="main-header">
-            <div>
-              <p className="eyebrow">{t('dashboard.eyebrow')}</p>
-              <h1>{activeSection === 'all' || activeSection === 'resources' ? t('dashboard.allHabits') : activeSectionLabel}</h1>
-            </div>
-            <div className="header-metrics">
-              <div>
-                <span>{t('dashboard.today')}</span>
-                <strong>{completedToday}/{habits.length}</strong>
-              </div>
-              <div>
-                <span>{t('dashboard.streaks')}</span>
-                <strong>{totalStreaks}</strong>
-              </div>
-            </div>
-          </div>
-
-          <section className="composer-panel" aria-label={t('dashboard.composerAria')}>
-            <input
-              id="new-habit-input"
-              type="text"
-              placeholder={t('dashboard.newHabitPlaceholder')}
-              className="habit-input"
-              data-cy="new-habit-input"
-              value={newHabitInput}
-              onChange={(event) => setNewHabitInput(event.target.value)}
-              onKeyDown={handleKeyPress}
-            />
-            <button className="add-btn" data-cy="add-habit-btn" onClick={addHabit} type="button">+</button>
-            <button className="browse-btn" onClick={() => setShowSuggestions((prev) => !prev)} type="button">{t('dashboard.browseButton')}</button>
-            <button className="icon-btn" onClick={openCategoryFilter} type="button" aria-label={t('dashboard.openFilterAria')}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          </section>
-
-          {categoryFilterOpen && (
-            <div className="filter-popout-overlay" role="dialog" aria-modal="true" onClick={closeCategoryFilter}>
-              <div className="filter-popout" onClick={(event) => event.stopPropagation()}>
-                <div className="filter-popout-header">
-                  <h3>{t('dashboard.filterTitle')}</h3>
-                  <button className="icon-btn" type="button" onClick={closeCategoryFilter} aria-label={t('dashboard.closeFilterAria')}>×</button>
-                </div>
-                <div className="filter-list">
-                  {categories.map((category) => {
-                    const active = pendingCategoryFilters.includes(category)
-                    return (
-                      <button
-                        key={category}
-                        type="button"
-                        className={`filter-item ${active ? 'active' : ''} ${getCategoryClass(category)}`}
-                        style={getCategoryStyle(category, darkMode ? 'dark' : 'light')}
-                        onClick={() => togglePendingCategory(category)}
-                      >
-                        <span className="filter-item-label">{getCategoryLabel(category)}</span>
-                        <span className={`filter-item-check ${active ? 'active' : ''}`} aria-hidden="true">
-                          {active ? '✓' : ''}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="filter-popout-actions">
-                  <button className="cancel-btn" type="button" onClick={clearCategoryFilters}>{t('filter.clear')}</button>
-                  <button className="save-btn" type="button" onClick={applyCategoryFilters}>{t('filter.apply')}</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showSuggestions && (
-            <div className="suggestions-modal" role="dialog" aria-modal="true">
-              <div className="suggestions-card">
-                <div className="suggestions-header">
-                  <h3>{t('browse.title')}</h3>
-                  <button className="close-btn" onClick={() => setShowSuggestions(false)} type="button">{t('browse.close')}</button>
-                </div>
-                <div className="suggestions-list">
-                  {suggestedHabits.map((suggestion, index) => (
-                    <button key={index} className="suggestion-item" onClick={() => addSuggestedHabit(suggestion)} type="button">
-                      <span>
-                        <strong>{suggestion.name}</strong>
-                        <small>{getCategoryLabel(suggestion.category)}</small>
-                      </span>
-                      <b>+</b>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <HabitCards
-            habits={visibleHabits}
-            selectedHabitId={selectedHabit?.id}
-            onSelectHabit={setSelectedHabitId}
-            onToggleHabit={handleToggleCheckbox}
-            onDeleteHabit={deleteHabit}
-            onUpdateHabit={handleUpdateHabit}
-            theme={darkMode ? 'dark' : 'light'}
-          />
-        </main>
+        <DashboardMainPanel
+          t={t}
+          activeSection={activeSection}
+          activeSectionLabel={activeSectionLabel}
+          completedToday={completedToday}
+          habitsCount={habits.length}
+          totalStreaks={totalStreaks}
+          newHabitInput={newHabitInput}
+          onNewHabitInputChange={setNewHabitInput}
+          onNewHabitKeyDown={handleKeyPress}
+          onAddHabit={addHabit}
+          onToggleSuggestions={() => setShowSuggestions((prev) => !prev)}
+          onOpenCategoryFilter={openCategoryFilter}
+          categoryFilterOpen={categoryFilterOpen}
+          categories={categories}
+          pendingCategoryFilters={pendingCategoryFilters}
+          onTogglePendingCategory={togglePendingCategory}
+          darkMode={darkMode}
+          onCloseCategoryFilter={closeCategoryFilter}
+          onClearCategoryFilters={clearCategoryFilters}
+          onApplyCategoryFilters={applyCategoryFilters}
+          showSuggestions={showSuggestions}
+          suggestedHabits={suggestedHabits}
+          onCloseSuggestions={() => setShowSuggestions(false)}
+          onAddSuggestedHabit={addSuggestedHabit}
+          getCategoryLabel={getCategoryLabel}
+          visibleHabits={visibleHabits}
+          selectedHabitId={selectedHabit?.id}
+          onSelectHabitId={setSelectedHabitId}
+          onToggleHabit={handleToggleCheckbox}
+          onDeleteHabit={deleteHabit}
+          onUpdateHabit={handleUpdateHabit}
+        />
 
         <HabitCalendar
           habit={selectedHabit}

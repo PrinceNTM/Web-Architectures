@@ -2,10 +2,6 @@ const STORAGE_KEY = 'habit-tracker-user'
 const MEMORY_STORE = Symbol.for('habit-tracker-user-store')
 
 const getStorage = () => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage
-  }
-
   if (typeof globalThis !== 'undefined') {
     if (!globalThis[MEMORY_STORE]) {
       globalThis[MEMORY_STORE] = {}
@@ -51,8 +47,7 @@ export const readStoredUser = () => {
   try {
     const stored = storage.getItem?.(STORAGE_KEY) ?? storage[STORAGE_KEY]
     return stored ? normalizeUser(JSON.parse(stored)) : null
-  } catch (error) {
-    console.error('Unable to read stored user', error)
+  } catch {
     return null
   }
 }

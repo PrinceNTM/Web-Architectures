@@ -1,4 +1,5 @@
 import { Server } from 'socket.io'
+import { logger } from '../utils/logger.js'
 
 let socketServer = null
 
@@ -15,15 +16,14 @@ export const initializeSocket = (server, corsOriginHandler) => {
   })
 
   socketServer.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`)
+    logger.info('socket.connected')
 
     socket.on('new-task', (payload) => {
-      console.log(`Received new-task from ${socket.id}`, payload)
       socket.broadcast.emit('new-task', payload)
     })
 
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`)
+      logger.info('socket.disconnected')
     })
   })
 

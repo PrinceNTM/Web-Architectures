@@ -1,4 +1,7 @@
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$suffix = [guid]::NewGuid().ToString('N').Substring(0, 8)
+$email = "e2e+$suffix@example.com"
+$password = "StrongPass!$suffix"
 
 Write-Output "Health:"
 try {
@@ -9,14 +12,16 @@ try {
 
 Write-Output "Register:"
 try {
-  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/register' -Method POST -ContentType 'application/json' -Body '{"email":"e2e+test@example.com","password":"password123"}' -WebSession $session | ConvertTo-Json
+  $registerBody = @{ email = $email; password = $password } | ConvertTo-Json
+  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/register' -Method POST -ContentType 'application/json' -Body $registerBody -WebSession $session | ConvertTo-Json
 } catch {
   Write-Output "Register failed: $_"
 }
 
 Write-Output "Login:"
 try {
-  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Body '{"email":"e2e+test@example.com","password":"password123"}' -WebSession $session | ConvertTo-Json
+  $loginBody = @{ email = $email; password = $password } | ConvertTo-Json
+  Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Body $loginBody -WebSession $session | ConvertTo-Json
 } catch {
   Write-Output "Login failed: $_"
 }

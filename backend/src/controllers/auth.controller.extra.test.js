@@ -1,5 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
+const TEST_PASSWORD = `Password!${Date.now()}`
+
 const { mockFindUnique, mockCreate, mockHash, mockCompare, mockSign } = vi.hoisted(() => ({
   mockFindUnique: vi.fn(),
   mockCreate: vi.fn(),
@@ -69,14 +71,14 @@ describe('authController extra coverage', () => {
     mockFindUnique.mockResolvedValue(null)
     mockHash.mockResolvedValue('hashed-password')
     mockCreate.mockResolvedValue({ id: 'u1', email: 'user@example.com' })
-    const req = { body: { email: 'USER@EXAMPLE.COM', password: 'Password123' } }
+    const req = { body: { email: 'USER@EXAMPLE.COM', password: TEST_PASSWORD } }
     const res = createRes()
     const next = vi.fn()
 
     await register(req, res, next)
 
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { email: 'user@example.com' } })
-    expect(mockHash).toHaveBeenCalledWith('Password123', 10)
+    expect(mockHash).toHaveBeenCalledWith(TEST_PASSWORD, 12)
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith({ id: 'u1', email: 'user@example.com' })
     expect(next).not.toHaveBeenCalled()
@@ -99,7 +101,7 @@ describe('authController extra coverage', () => {
     mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', password: 'hash' })
     mockCompare.mockResolvedValue(true)
     mockSign.mockReturnValue('jwt-token')
-    const req = { body: { email: 'user@example.com', password: 'Password123' } }
+    const req = { body: { email: 'user@example.com', password: TEST_PASSWORD } }
     const res = createRes()
     const next = vi.fn()
 
@@ -135,17 +137,5 @@ describe('authController extra coverage', () => {
       }),
     )
     expect(res.json).toHaveBeenCalledWith({ success: true })
-  })
-
-  it('getSSEToken returns a signed JWT', async () => {
-    const { getSSEToken } = await loadController()
-    mockSign.mockReturnValue('sse-token')
-    const req = { user: { userId: 'u1', email: 'user@example.com' } }
-    const res = createRes()
-
-    getSSEToken(req, res)
-
-    expect(mockSign).toHaveBeenCalled()
-    expect(res.json).toHaveBeenCalledWith({ token: 'sse-token' })
   })
 })

@@ -24,6 +24,9 @@ vi.mock('bcrypt', () => ({
 
 import { login, register } from './authController.js'
 
+const VALID_TEST_PASSWORD = `Password!${Date.now()}`
+const INVALID_TEST_PASSWORD = `WrongPass!${Date.now()}`
+
 describe('Auth sad path tests', () => {
   beforeEach(() => {
     mockFindUnique.mockReset()
@@ -54,7 +57,7 @@ describe('Auth sad path tests', () => {
     mockFindUnique.mockResolvedValue({ id: 'user1', email: 'user@example.com', password: 'hashed' })
     mockCompare.mockResolvedValue(false)
 
-    const req: any = { body: { email: 'user@example.com', password: 'wrongpass' } }
+    const req: any = { body: { email: 'user@example.com', password: INVALID_TEST_PASSWORD } }
     const res: any = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -70,7 +73,7 @@ describe('Auth sad path tests', () => {
   it('Register with existing email returns 409', async () => {
     mockFindUnique.mockResolvedValue({ id: 'user1', email: 'exists@example.com' })
 
-    const req: any = { body: { email: 'exists@example.com', password: 'Password123' } }
+    const req: any = { body: { email: 'exists@example.com', password: VALID_TEST_PASSWORD } }
     const res: any = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),

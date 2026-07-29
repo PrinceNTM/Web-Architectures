@@ -7,7 +7,6 @@ function Login({ setUser }) {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -22,11 +21,6 @@ function Login({ setUser }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
-
-    if (!acceptedTerms) {
-      setError('Bitte akzeptiere AGB und Datenschutz, um fortzufahren.')
-      return
-    }
 
     setIsSubmitting(true)
 
@@ -97,17 +91,6 @@ function Login({ setUser }) {
                 required
               />
             </div>
-
-            <label className="policy-check" htmlFor="terms-consent">
-              <input
-                id="terms-consent"
-                data-cy="terms-consent"
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(event) => setAcceptedTerms(event.target.checked)}
-              />
-              <span>Ich akzeptiere AGB und Datenschutz.</span>
-            </label>
 
             <button className="login-btn" data-cy="login-submit" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Anmelden...' : 'Anmelden'}

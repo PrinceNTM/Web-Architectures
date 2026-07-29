@@ -20,7 +20,7 @@ describe('profileStorage', () => {
     })
   })
 
-  it('persists and reads a user profile from localStorage', () => {
+  it('persists and reads a user profile from the in-memory store', () => {
     const user = normalizeUser({
       id: '1',
       email: 'user@example.com',
@@ -31,30 +31,22 @@ describe('profileStorage', () => {
 
     writeStoredUser(user)
 
+    expect(globalThis[MEMORY_STORE][STORAGE_KEY]).toBeDefined()
     expect(readStoredUser()).toEqual(user)
   })
 
   it('returns null for malformed stored user JSON', () => {
-    window.localStorage.setItem(STORAGE_KEY, '{invalid-json')
+    globalThis[MEMORY_STORE] = { [STORAGE_KEY]: '{invalid-json' }
 
     expect(readStoredUser()).toBeNull()
   })
 
-  it('uses in-memory fallback store when localStorage is unavailable', () => {
-    const originalWindow = globalThis.window
-    globalThis.window = undefined
+  it('clears a stored user from the in-memory store', () => {
+    const user = normalizeUser({ id: '2', email: 'fallback@example.com' })
+    writeStoredUser(user)
 
-    try {
-      const user = normalizeUser({ id: '2', email: 'fallback@example.com' })
-      writeStoredUser(user)
+    clearStoredUser()
 
-      expect(globalThis[MEMORY_STORE][STORAGE_KEY]).toBeDefined()
-      expect(readStoredUser()).toEqual(user)
-
-      clearStoredUser()
-      expect(globalThis[MEMORY_STORE][STORAGE_KEY]).toBeUndefined()
-    } finally {
-      globalThis.window = originalWindow
-    }
+    expect(globalThis[MEMORY_STORE][STORAGE_KEY]).toBeUndefined()
   })
 })

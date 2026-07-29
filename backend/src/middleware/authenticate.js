@@ -1,19 +1,19 @@
 import jwt from 'jsonwebtoken'
+import { logger } from '../utils/logger.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
 const TOKEN_NAME = 'token'
 const UNAUTHORIZED_ERROR = { error: 'Nicht autorisiert.' }
 
 export const authenticate = (req, res, next) => {
-  // Token aus Cookies oder Query-Parameter (für SSE)
-  const token = req.cookies?.[TOKEN_NAME] || req.query?.token
+  const token = req.cookies?.[TOKEN_NAME]
 
   if (!token) {
     return res.status(401).json(UNAUTHORIZED_ERROR)
   }
 
   if (!JWT_SECRET) {
-    console.error('JWT_SECRET is not configured')
+    logger.error('auth.jwt_secret_missing')
     return res.status(500).json({ error: 'Serverkonfiguration fehlerhaft.' })
   }
 

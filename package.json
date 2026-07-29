@@ -37,12 +37,12 @@
   },
   "homepage": "https://github.com/PrinceNTM/Web-Architectures#readme",
   "devDependencies": {
-    "concurrently": "^9.0.1",
+    "concurrently": "^10.0.4",
     "cross-env": "^7.0.3",
-    "cypress": "15.16.0",
+    "cypress": "^15.19.0",
     "kill-port": "^2.0.1",
-    "start-server-and-test": "^2.0.3",
-    "wait-on": "^7.0.1",
-    "typescript": "^5.2.2"
+    "start-server-and-test": "^3.0.11",
+    "typescript": "^5.2.2",
+    "wait-on": "^9.1.0"
   }
 }

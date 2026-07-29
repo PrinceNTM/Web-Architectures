@@ -36,7 +36,7 @@ describe('tracking.service', () => {
     const existing = { id: 'e1', habitId: 'h1', date: '2026-07-28', value: 1 }
     mockFindFirst.mockResolvedValue(existing)
 
-    const result = await createEntry('h1', '2026-07-28', 1)
+    const result = await createEntry('h1', 'u1', '2026-07-28', 1)
 
     expect(result).toEqual(existing)
     expect(mockCreate).not.toHaveBeenCalled()
@@ -46,7 +46,7 @@ describe('tracking.service', () => {
     mockFindFirst.mockResolvedValue(null)
     mockCreate.mockResolvedValue({ id: 'e2' })
 
-    const result = await createEntry('h1', '2026-07-28', 2)
+    const result = await createEntry('h1', 'u1', '2026-07-28', 2)
 
     expect(mockCreate).toHaveBeenCalledWith({
       data: {
@@ -70,6 +70,7 @@ describe('tracking.service', () => {
       where: {
         habitId: 'h1',
         date: '2026-07-29',
+        habit: { userId: undefined },
       },
     })
     vi.useRealTimers()
@@ -77,31 +78,38 @@ describe('tracking.service', () => {
 
   it('deletes an entry by habit and date', async () => {
     mockDeleteMany.mockResolvedValue({ count: 1 })
-    await deleteEntry('h1', '2026-07-20')
+    await deleteEntry('h1', 'u1', '2026-07-20')
 
     expect(mockDeleteMany).toHaveBeenCalledWith({
       where: {
         habitId: 'h1',
         date: '2026-07-20',
+        habit: { userId: 'u1' },
       },
     })
   })
 
   it('returns entries by habit id sorted by date', async () => {
     mockFindMany.mockResolvedValue([{ id: 'e1' }])
-    const result = await getEntriesByHabitId('h1')
+    const result = await getEntriesByHabitId('h1', 'u1')
 
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { habitId: 'h1' },
+      where: {
+        habitId: 'h1',
+        habit: { userId: 'u1' },
+      },
       orderBy: { date: 'asc' },
     })
     expect(result).toEqual([{ id: 'e1' }])
   })
 
   it('deletes entries by date', async () => {
-    await deleteEntriesByDate('2026-07-01')
+    await deleteEntriesByDate('2026-07-01', 'u1')
     expect(mockDeleteMany).toHaveBeenCalledWith({
-      where: { date: '2026-07-01' },
+      where: {
+        date: '2026-07-01',
+        habit: { userId: 'u1' },
+      },
     })
   })
 

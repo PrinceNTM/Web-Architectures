@@ -4,6 +4,7 @@ import prisma from '../prisma.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
 const TOKEN_NAME = 'token'
+const BCRYPT_SALT_ROUNDS = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10)
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -29,7 +30,11 @@ export const register = async (req, res, next) => {
       return res.status(409).json({ error: 'E-Mail bereits vergeben.' })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const saltRounds = Number.isInteger(BCRYPT_SALT_ROUNDS) && BCRYPT_SALT_ROUNDS >= 12
+      ? BCRYPT_SALT_ROUNDS
+      : 12
+
+    const hashedPassword = await bcrypt.hash(password, saltRounds)
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -94,18 +99,4 @@ export const logout = async (req, res) => {
     sameSite: 'lax',
   })
   return res.json({ success: true })
-}
-
-export const getSSEToken = (req, res) => {
-  // Gibt einen JWT-Token zurück, der mit EventSource verwendet werden kann
-  // Wird über Query-Parameter übermittelt
-  const token = jwt.sign(
-    {
-      userId: req.user.userId,
-      email: req.user.email,
-    },
-    JWT_SECRET,
-    { expiresIn: '24h' },
-  )
-  return res.json({ token })
 }

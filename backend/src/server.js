@@ -2,6 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import helmet from 'helmet'
 import http from 'http'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -17,27 +18,79 @@ const __dirname = dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:5174']
+
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false)
+
+const parseAllowedOrigins = () => {
+  const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.ALLOWED_ORIGINS,
+    'http://localhost:5173',
+    'http://localhost:5174',
+  ]
+    .filter(Boolean)
+    .flatMap((value) => value.split(','))
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  return configuredOrigins
+    .map((value) => {
+      try {
+        return new URL(value)
+      } catch {
+        return null
+      }
+    })
+    .filter(Boolean)
+}
+
+const allowedOriginUrls = parseAllowedOrigins()
+const localHostnames = new Set(['localhost', '127.0.0.1'])
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true
+  }
+
+  let parsedOrigin
+
+  try {
+    parsedOrigin = new URL(origin)
+  } catch {
+    return false
+  }
+
+  if (!['http:', 'https:'].includes(parsedOrigin.protocol)) {
+    return false
+  }
+
+  if (localHostnames.has(parsedOrigin.hostname)) {
+    return true
+  }
+
+  return allowedOriginUrls.some((allowedOrigin) => (
+    allowedOrigin.origin === parsedOrigin.origin && allowedOrigin.hostname === parsedOrigin.hostname
+  ))
+}
 
 const corsOriginHandler = (origin, callback) => {
-  if (!origin) return callback(null, true)
-  
-  // Allow all local origins (localhost, 127.0.0.1, or local subnet IPs) and development environments
-  const isLocal = origin.startsWith('http://localhost:') || 
-                  origin.startsWith('http://127.0.0.1:') || 
-                  origin.startsWith('http://[::1]:') || 
-                  origin.startsWith('http://192.168.') || 
-                  origin.startsWith('http://10.') || 
-                  origin.startsWith('http://172.16.') || 
-                  origin.startsWith('http://172.31.')
-                  
-  if (isLocal || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+  if (isAllowedOrigin(origin)) {
     return callback(null, true)
   }
   return callback(new Error('Not allowed by CORS'))
 }
 
 // Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'", 'http://localhost:3000', 'ws://localhost:3000'],
+    },
+  },
+}))
 app.use(cors({
   origin: corsOriginHandler,
   credentials: true,
@@ -46,7 +99,7 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie'],
 }))
 app.use(cookieParser())
-app.use(express.json())
+app.use(express.json({ limit: '100kb' }))
 
 // Routes
 app.use('/api/auth', authRoutes)
@@ -60,7 +113,11 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack)
+  console.error({
+    message: err.message,
+    path: req.path,
+    method: req.method,
+  })
   res.status(500).json({ error: 'Ein interner Serverfehler ist aufgetreten.' })
 })
 

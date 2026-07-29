@@ -137,7 +137,7 @@ describe('habitController', () => {
 
     await checkInHabit(req, res)
 
-    expect(mockTrackingService.createEntry).toHaveBeenCalledWith('h1', '2026-07-28', 1)
+    expect(mockTrackingService.createEntry).toHaveBeenCalledWith('h1', 'u1', '2026-07-28', 1)
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith({ id: 'e1' })
   })
@@ -170,11 +170,12 @@ describe('habitController', () => {
 
   it('resetCheckinsForDate returns success', async () => {
     mockTrackingService.deleteEntriesByDate.mockResolvedValue({ count: 2 })
-    const req = { body: { date: '2026-07-28' } }
+    const req = { body: { date: '2026-07-28' }, user: { userId: 'u1' } }
     const res = createRes()
 
     await resetCheckinsForDate(req, res)
 
+    expect(mockTrackingService.deleteEntriesByDate).toHaveBeenCalledWith('2026-07-28', 'u1')
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 

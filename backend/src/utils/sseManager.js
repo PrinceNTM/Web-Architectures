@@ -3,6 +3,8 @@
  * Verwaltet verbundene Clients und broadcastet Events
  */
 
+import { logger } from './logger.js'
+
 // Speichert alle verbundenen Clients pro Benutzer
 const clientsByUser = new Map()
 
@@ -11,7 +13,7 @@ export const addClient = (userId, res) => {
     clientsByUser.set(userId, [])
   }
   clientsByUser.get(userId).push(res)
-  console.log(`Client verbunden für Benutzer ${userId}. Insgesamt: ${clientsByUser.get(userId).length}`)
+  logger.info('sse.client_connected', { connections: clientsByUser.get(userId).length })
 }
 
 export const removeClient = (userId, res) => {
@@ -22,7 +24,7 @@ export const removeClient = (userId, res) => {
   
   if (index !== -1) {
     clients.splice(index, 1)
-    console.log(`Client getrennt für Benutzer ${userId}. Verbleibend: ${clients.length}`)
+    logger.info('sse.client_disconnected', { connections: clients.length })
   }
 }
 
@@ -36,7 +38,7 @@ export const broadcastEvent = (userId, eventType, data) => {
     try {
       res.write(message)
     } catch (error) {
-      console.error('Fehler beim Senden des Events:', error)
+      logger.error('sse.broadcast_failed', error)
       removeClient(userId, res)
     }
   })

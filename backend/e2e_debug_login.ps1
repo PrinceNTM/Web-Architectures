@@ -1,6 +1,12 @@
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$suffix = [guid]::NewGuid().ToString('N').Substring(0, 8)
+$email = "e2e+$suffix@example.com"
+$password = "StrongPass!$suffix"
+
+Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/register' -Method POST -ContentType 'application/json' -Body (@{ email = $email; password = $password } | ConvertTo-Json) -WebSession $session -ErrorAction SilentlyContinue | Out-Null
 try {
-  $resp = Invoke-WebRequest -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Body '{"email":"e2e+test@example.com","password":"password123"}' -WebSession $session -UseBasicParsing -Verbose -ErrorAction Stop
+  $loginBody = @{ email = $email; password = $password } | ConvertTo-Json
+  $resp = Invoke-WebRequest -Uri 'http://localhost:3000/api/auth/login' -Method POST -ContentType 'application/json' -Body $loginBody -WebSession $session -UseBasicParsing -Verbose -ErrorAction Stop
   Write-Output "Status: $($resp.StatusCode.Value__)"
   Write-Output "Headers:"
   $resp.Headers | Format-List

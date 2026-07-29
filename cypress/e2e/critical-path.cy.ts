@@ -1,7 +1,8 @@
 describe('Critical path - Login and create habit', () => {
   const api = Cypress.env('apiUrl') || 'http://localhost:3000/api'
-  const email = 'e2e+test@example.com'
-  const password = 'password123'
+  const uniqueSeed = `${Date.now()}-${Cypress._.random(1000, 9999)}`
+  const email = `e2e+${uniqueSeed}@example.com`
+  const password = `StrongPass!${uniqueSeed}`
   const habitName = 'Cypress Habit'
 
   beforeEach(() => {
@@ -18,7 +19,6 @@ describe('Critical path - Login and create habit', () => {
 
     cy.get('[data-cy=login-email]').clear().type(email)
     cy.get('[data-cy=login-password]').clear().type(password)
-    cy.get('[data-cy=terms-consent]').check({ force: true })
     cy.get('[data-cy=login-submit]').click()
 
     // After login, should be redirected to home

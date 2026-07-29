@@ -66,7 +66,7 @@ describe('authenticate middleware', () => {
       throw new Error('invalid token')
     })
     const { authenticate } = await import('./authenticate.js')
-    const req = { cookies: {}, query: { token: 'bad-token' } }
+    const req = { cookies: { token: 'bad-token' }, query: {} }
     const res = createRes()
     const next = vi.fn()
 

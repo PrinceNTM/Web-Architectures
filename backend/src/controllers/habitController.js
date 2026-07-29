@@ -2,6 +2,7 @@ import { addClient, removeClient } from '../utils/sseManager.js'
 import * as HabitService from '../services/habits.service.js';
 import * as TrackingService from '../services/tracking.service.js';
 import { ValidationError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js'
 
 // Direkte Prisma-Importe und SSE/Email-Utility-Importe wurden aus dem Controller entfernt,
 // da deren Logik nun im Service-Layer gekapselt ist.
@@ -11,7 +12,7 @@ export const getHabits = async (req, res) => {
     const habits = await HabitService.getAllHabits(req.user.userId);
     return res.json(habits);
   } catch (error) {
-    console.error('Error fetching habits:', error)
+    logger.error('habit.list.failed', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
@@ -22,7 +23,7 @@ export const getHabitById = async (req, res) => {
     return res.status(200).json(habit);
   } catch (error) {
     const status = error.statusCode || 500;
-    console.error(`Error fetching habit (ID: ${req.params.id}):`, error.message); // Spezifische ID für Debugging loggen
+    logger.error('habit.get.failed', error)
     return res.status(status).json({ error: error.message || 'Interner Serverfehler.' });
   }
 }
@@ -56,7 +57,7 @@ export const updateHabit = async (req, res) => {
     if (error.code === 'P2025' || status === 404) {
       return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
-    console.error('Error updating habit:', error)
+    logger.error('habit.update.failed', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
@@ -70,7 +71,7 @@ export const deleteHabit = async (req, res) => {
     if (error.code === 'P2025' || status === 404) {
       return res.status(404).json({ error: 'Gewohnheit nicht gefunden.' })
     }
-    console.error('Error deleting habit:', error)
+    logger.error('habit.delete.failed', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
@@ -82,10 +83,10 @@ export const checkInHabit = async (req, res) => {
     const userId = req.user.userId
 
     await HabitService.getHabitById(habitId, userId);
-    const checkin = await TrackingService.createEntry(habitId, date, 1)
+    const checkin = await TrackingService.createEntry(habitId, userId, date, 1)
     res.status(201).json(checkin)
   } catch (error) {
-    console.error('Error checking in habit:', error)
+    logger.error('habit.checkin.create.failed', error)
     const status = error.statusCode || 500
     res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
   }
@@ -98,10 +99,10 @@ export const removeHabitCheckin = async (req, res) => {
     const userId = req.user.userId
 
     await HabitService.getHabitById(habitId, userId);
-    await TrackingService.deleteEntry(habitId, date)
+    await TrackingService.deleteEntry(habitId, userId, date)
     res.status(204).send()
   } catch (error) {
-    console.error('Error removing habit checkin:', error)
+    logger.error('habit.checkin.delete.failed', error)
     const status = error.statusCode || 500
     res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
   }
@@ -113,10 +114,10 @@ export const getHabitCheckins = async (req, res) => {
     const userId = req.user.userId
 
     await HabitService.getHabitById(habitId, userId);
-    const checkins = await TrackingService.getEntriesByHabitId(habitId)
+    const checkins = await TrackingService.getEntriesByHabitId(habitId, userId)
     res.json(checkins)
   } catch (error) {
-    console.error('Error fetching habit checkins:', error)
+    logger.error('habit.checkin.list.failed', error)
     const status = error.statusCode || 500
     res.status(status).json({ error: error.message || 'Interner Serverfehler.' })
   }
@@ -125,10 +126,10 @@ export const getHabitCheckins = async (req, res) => {
 export const resetCheckinsForDate = async (req, res) => {
   try {
     const { date } = req.body
-    await TrackingService.deleteEntriesByDate(date)
+    await TrackingService.deleteEntriesByDate(date, req.user.userId)
     res.json({ success: true })
   } catch (error) {
-    console.error('Error resetting habit checkins:', error)
+    logger.error('habit.checkin.reset.failed', error)
     res.status(500).json({ error: 'Interner Serverfehler.' })
   }
 }
@@ -144,8 +145,6 @@ export const setupSSEConnection = (req, res) => {
   // Client registrieren
   addClient(userId, res)
   
-  console.log(`SSE-Connection für User ${userId} hergestellt`)
-  
   // Initiale Verbindungs-Nachricht senden
   res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE verbunden' })}\n\n`)
   
@@ -154,7 +153,7 @@ export const setupSSEConnection = (req, res) => {
     try {
       res.write(`: heartbeat\n\n`)
     } catch (error) {
-      console.error('Fehler beim Heartbeat:', error)
+      logger.error('habit.sse.heartbeat_failed', error)
       clearInterval(heartbeatInterval)
       removeClient(userId, res)
     }
@@ -162,7 +161,6 @@ export const setupSSEConnection = (req, res) => {
   
   // Cleanup bei Client-Disconnect
   req.on('close', () => {
-    console.log(`SSE-Connection für User ${userId} geschlossen`)
     clearInterval(heartbeatInterval)
     removeClient(userId, res)
     res.end()

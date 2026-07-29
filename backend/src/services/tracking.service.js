@@ -8,13 +8,14 @@ const formatDate = (date) => {
 /**
  * Erstellt einen neuen Check-in Eintrag.
  */
-export const createEntry = async (habitId, date, value = 1) => {
+export const createEntry = async (habitId, userId, date, value = 1) => {
   const normalizedDate = formatDate(date)
 
   const existing = await prisma.entry.findFirst({
     where: {
       habitId,
       date: normalizedDate,
+      habit: { userId },
     },
   })
 
@@ -34,13 +35,14 @@ export const createEntry = async (habitId, date, value = 1) => {
 /**
  * Löscht einen Check-in Eintrag.
  */
-export const deleteEntry = async (habitId, date) => {
+export const deleteEntry = async (habitId, userId, date) => {
   const normalizedDate = formatDate(date)
 
   return await prisma.entry.deleteMany({
     where: {
       habitId,
       date: normalizedDate,
+      habit: { userId },
     },
   })
 };
@@ -48,9 +50,12 @@ export const deleteEntry = async (habitId, date) => {
 /**
  * Liefert alle Check-ins für ein bestimmtes Habit.
  */
-export const getEntriesByHabitId = async (habitId) => {
+export const getEntriesByHabitId = async (habitId, userId) => {
   return await prisma.entry.findMany({
-    where: { habitId },
+    where: {
+      habitId,
+      habit: { userId },
+    },
     orderBy: { date: 'asc' },
   })
 };
@@ -58,11 +63,14 @@ export const getEntriesByHabitId = async (habitId) => {
 /**
  * Löscht alle Check-ins für ein bestimmtes Datum.
  */
-export const deleteEntriesByDate = async (date) => {
+export const deleteEntriesByDate = async (date, userId) => {
   const normalizedDate = formatDate(date)
 
   return await prisma.entry.deleteMany({
-    where: { date: normalizedDate },
+    where: {
+      date: normalizedDate,
+      habit: { userId },
+    },
   })
 };
 

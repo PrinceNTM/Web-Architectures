@@ -1,4 +1,5 @@
 import { sendHabitCreatedEmail } from './sendHabitCreatedEmail.js'
+import { logger } from '../utils/logger.js'
 
 const emailQueue = []
 let isProcessing = false
@@ -6,7 +7,7 @@ let workerInterval = null
 
 export const enqueueEmail = (job) => {
   emailQueue.push(job)
-  console.log(`Queued email job: ${job.type}`)
+  logger.info('email.job.queued', { type: job.type })
 }
 
 const processNextJob = async () => {
@@ -29,10 +30,10 @@ const processNextJob = async () => {
         })
         break
       default:
-        console.warn(`Unknown email job type: ${job.type}`)
+        logger.warn('email.job.unknown', { type: job.type })
     }
   } catch (error) {
-    console.error('Error processing email job:', error)
+    logger.error('email.job.failed', error, { type: job.type })
   } finally {
     isProcessing = false
   }
@@ -47,6 +48,6 @@ export const startEmailQueueWorker = () => {
     void processNextJob()
   }, 1000)
 
-  console.log('Email queue worker started')
+  logger.info('email.worker.started')
   return workerInterval
 }

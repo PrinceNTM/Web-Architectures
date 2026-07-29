@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { validatePassword } from './validatePassword'
 
+const VALID_PASSWORD = `ValidPass!${Date.now()}9`
+
 describe('validatePassword', () => {
   it('Normalfall: gültiges Passwort', () => {
-    expect(validatePassword('Password123')).toBe(true)
+    expect(validatePassword(VALID_PASSWORD)).toBe(true)
   })
 
   it('Leerer Input / kurzer Input', () => {

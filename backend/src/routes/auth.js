@@ -1,19 +1,22 @@
 import express from 'express'
 import { authenticate } from '../middleware/authenticate.js'
-import { register, login, me, logout, getSSEToken } from '../controllers/authController.js'
+import { authRateLimiter, loginRateLimiter, registerRateLimiter } from '../middleware/rateLimit.js'
+import { register, login, me, logout } from '../controllers/authController.js'
 import { getCurrentUserProfile, updateUserProfile } from '../controllers/userController.js'
 
 const router = express.Router()
 
 // Public routes
-router.post('/register', register)
-router.post('/login', login)
+router.post('/register', registerRateLimiter, register)
+router.post('/login', loginRateLimiter, login)
+
+router.use(authRateLimiter)
+router.use(authenticate)
 
 // Protected routes
-router.get('/me', authenticate, me)
-router.get('/profile', authenticate, getCurrentUserProfile)
-router.put('/profile', authenticate, updateUserProfile)
-router.post('/logout', authenticate, logout)
-router.get('/sse-token', authenticate, getSSEToken)
+router.get('/me', me)
+router.get('/profile', getCurrentUserProfile)
+router.put('/profile', updateUserProfile)
+router.post('/logout', logout)
 
 export default router

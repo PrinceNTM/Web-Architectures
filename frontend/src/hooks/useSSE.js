@@ -48,17 +48,10 @@ export const useSSE = (onEvent, eventType = null) => {
 
     const connectSSE = async () => {
       try {
-        // Hole SSE-Token vom Backend
-        const sseTokenResponse = await api.get('/auth/sse-token')
-        if (isCancelled) return
-        const sseToken = sseTokenResponse.data.token
-
-        // EventSource zum SSE-Endpoint verbinden mit Token
         const backendURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-        const url = `${backendURL}/habits/events/stream?token=${encodeURIComponent(sseToken)}`
-        console.log('Verbinde zu SSE-Endpoint mit Token')
+        const url = `${backendURL}/habits/events/stream`
 
-        eventSource = new EventSource(url)
+        eventSource = new EventSource(url, { withCredentials: true })
 
         // Falls der Effect während des Token-Fetches schon wieder aufgeräumt
         // wurde, die frisch erzeugte Verbindung sofort schließen (kein Leak).
@@ -70,7 +63,7 @@ export const useSSE = (onEvent, eventType = null) => {
 
         // Bei erfolgreicher Verbindung
         eventSource.addEventListener('connected', () => {
-          console.log('SSE-Verbindung hergestellt')
+          return undefined
         })
 
         // Generic Message-Handler für alle Events

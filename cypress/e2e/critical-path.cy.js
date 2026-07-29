@@ -1,7 +1,8 @@
 describe('Critical path - Login and create habit', () => {
     const base = 'http://localhost:5173';
-    const email = 'e2e+test@example.com';
-    const password = 'password123';
+    const uniqueSeed = `${Date.now()}-${Cypress._.random(1000, 9999)}`;
+    const email = `e2e+${uniqueSeed}@example.com`;
+    const password = `StrongPass!${uniqueSeed}`;
     const habitName = 'Cypress Habit';
     it('logs in, gets redirected, creates a habit and sees it in the list', () => {
         cy.visit(`${base}/login`);

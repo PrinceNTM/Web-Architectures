@@ -2,19 +2,20 @@ import React from 'react'
 import { Resend } from 'resend'
 import { render } from '@react-email/render'
 import HabitCreatedEmail from './templates/HabitCreatedEmail.js'
+import { logger } from '../utils/logger.js'
 
 let resendClient = null
 
 export const sendHabitCreatedEmail = async ({ to, habitName, createdAt, appUrl, habitId }) => {
   if (!to) {
-    console.warn('No recipient provided for habit-created email.')
+    logger.warn('email.habit_created.missing_recipient')
     return
   }
 
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
-    console.warn('RESEND_API_KEY not configured. Skipping habit-created email.')
+    logger.warn('email.habit_created.api_key_missing')
     return
   }
 
@@ -40,12 +41,12 @@ export const sendHabitCreatedEmail = async ({ to, habitName, createdAt, appUrl, 
     })
 
     if (error) {
-      console.error('Error sending habit created email:', error)
+      logger.error('email.habit_created.send_failed', error)
       return
     }
 
-    console.log('Habit created email sent:', data?.id)
+    logger.info('email.habit_created.sent')
   } catch (error) {
-    console.error('Error sending habit created email:', error)
+    logger.error('email.habit_created.render_failed', error)
   }
 }

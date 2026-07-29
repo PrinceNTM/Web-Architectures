@@ -59,11 +59,11 @@ function Sidebar({
 
         <div className="sidebar-divider" />
 
-        <button className="sidebar-link utility" type="button" onClick={onOpenProfile}>
+        <button className="sidebar-link utility" type="button" onClick={onOpenProfile} data-cy="sidebar-open-profile">
           <span>{t('sidebar.editProfile')}</span>
         </button>
 
-        <button className="sidebar-link utility logout" type="button" onClick={onLogout}>
+        <button className="sidebar-link utility logout" type="button" onClick={onLogout} data-cy="sidebar-logout">
           <span>{t('sidebar.logout')}</span>
         </button>
       </div>

@@ -21,16 +21,7 @@ habit-tracker/
 
 ## Quick Start (One Command)
 
-### 1) Setup environment files
-
-Copy the example files once:
-
-```bash
-copy backend\\.env.example backend\\.env
-copy frontend\\.env.example frontend\\.env.local
-```
-
-### 2) Start full stack (frontend + backend + database migrations)
+### 1) Start full stack (frontend + backend + database migrations)
 
 From repository root:
 
@@ -38,21 +29,56 @@ From repository root:
 npm run dev
 ```
 
+What this command does automatically:
+- creates missing env files from templates (`backend/.env`, `frontend/.env.local`)
+- runs a preflight env guard (fails fast on missing/empty required variables)
+- frees required dev ports (`3000`, `5173`) before startup
+- starts backend with migrations/generate on `http://localhost:3000`
+- starts frontend on fixed strict port `http://localhost:5173`
+
 This starts:
 - backend on `http://localhost:3000`
 - frontend on `http://localhost:5173`
 
-### 3) Run all tests with one command
+### 2) Run all tests with one command
 
 ```bash
 npm test
 ```
 
-### 4) Run coverage reports
+This command also runs the same preflight guard before unit and E2E tests.
+
+### Optional: run only the preflight guard
+
+```bash
+npm run preflight
+```
+
+### 3) Run coverage reports
 
 ```bash
 npm run test:coverage
 ```
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+- `PORT` (default: `3000`)
+- `NODE_ENV` (default: `development`)
+- `DATABASE_URL` (default: `file:./dev.db`)
+- `JWT_SECRET` (required for auth)
+- `FRONTEND_URL` (default: `http://localhost:5173`)
+- `ALLOWED_ORIGINS` (optional CSV, e.g. `http://localhost:5173,http://localhost:5174`)
+- `BCRYPT_SALT_ROUNDS` (default: `12`)
+- `RESEND_API_KEY` (optional)
+- `RESEND_FROM_EMAIL` (optional)
+- `APP_URL` (optional)
+
+### Frontend (`frontend/.env.local`)
+
+- `VITE_API_BASE_URL` (default: `http://localhost:3000/api`)
+- `VITE_SOCKET_URL` (optional, default derived from API URL)
 
 ## Getting Started
 

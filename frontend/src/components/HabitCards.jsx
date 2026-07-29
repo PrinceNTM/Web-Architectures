@@ -102,6 +102,7 @@ function HabitCards({
             <button
               className={`habit-check ${habit.isChecked ? 'checked' : ''}`}
               type="button"
+              data-cy={`habit-check-${habit.id}`}
               onClick={(event) => {
                 event.stopPropagation()
                 onToggleHabit(habit.id)
@@ -129,10 +130,11 @@ function HabitCards({
             </div>
 
             <div className="habit-actions" onClick={(event) => event.stopPropagation()}>
-              <button className="icon-btn" type="button" onClick={() => onDeleteHabit(habit.id)} aria-label={t('habitCard.deleteAria')}>x</button>
+              <button className="icon-btn" type="button" data-cy={`habit-delete-${habit.id}`} onClick={() => onDeleteHabit(habit.id)} aria-label={t('habitCard.deleteAria')}>x</button>
               <button
                 className="icon-btn"
                 type="button"
+                data-cy={`habit-edit-${habit.id}`}
                 onClick={() => (isSettingsOpen ? closeHabitSettings() : openHabitSettings(habit))}
                 aria-label={t('habitCard.editAria')}
                 aria-expanded={isSettingsOpen}
@@ -241,7 +243,7 @@ function HabitCards({
                   </div>
 
                   <div className="popout-actions">
-                    <button className="popout-save" type="button" onClick={() => saveHabitSettings(habit.id)}>{t('habitCard.save')}</button>
+                    <button className="popout-save" type="button" data-cy="habit-popout-save" onClick={() => saveHabitSettings(habit.id)}>{t('habitCard.save')}</button>
                     <button className="popout-discard" type="button" onClick={closeHabitSettings}>{t('habitCard.discard')}</button>
                   </div>
                 </div>

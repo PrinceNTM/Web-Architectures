@@ -29,6 +29,7 @@ function ProfileEditor({
               <input
                 id="firstName"
                 className="form-input"
+                data-cy="profile-first-name"
                 value={profile.firstName}
                 onChange={(event) => onProfileChange({ ...profile, firstName: event.target.value })}
               />
@@ -72,6 +73,7 @@ function ProfileEditor({
             <select
               id="language"
               className="form-input"
+                data-cy="profile-language"
               value={profile.language}
               onChange={(event) => onProfileChange({ ...profile, language: event.target.value })}
             >
@@ -135,8 +137,8 @@ function ProfileEditor({
           </div>
 
           <div className="profile-actions">
-            <button className="save-btn" type="submit">{t('profile.save')}</button>
-            <button className="cancel-btn" type="button" onClick={onCancel}>{t('profile.cancel')}</button>
+            <button className="save-btn" type="submit" data-cy="profile-save">{t('profile.save')}</button>
+            <button className="cancel-btn" type="button" onClick={onCancel} data-cy="profile-cancel">{t('profile.cancel')}</button>
           </div>
         </form>
       </div>

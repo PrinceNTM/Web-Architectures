@@ -57,7 +57,3 @@ Wesentliche Learnings:
 - Branch-Coverage erfordert gezielte Fehlerpfad-Tests; reine Happy-Path-Tests reichen nicht fuer belastbare Qualitaet.
 - Ein zentraler Root-Workflow reduziert Abgaberisiken deutlich (gleiche Pipeline fuer Start, Test und Coverage).
 
-## 7. Offene Punkte bis Abgabe
-- Optionales produktives Deployment (z. B. Hetzner/Render) dokumentieren.
-- Weitere E2E-Cases fuer Profil- und Check-in-Flows ergaenzen.
-- Optional: CI-Pipeline (GitHub Actions) fuer automatische Verifikation bei jedem Push.

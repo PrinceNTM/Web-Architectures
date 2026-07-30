@@ -20,13 +20,28 @@ if (typeof window !== 'undefined' && window.location) {
   }
 }
 
+/** Read the signed CSRF token issued by the backend cookie. */
+const getCsrfToken = () => {
+  if (typeof document === 'undefined') return ''
+  const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
   },
+})
+
+// Attach signed CSRF token before every state-changing request.
+api.interceptors.request.use((config) => {
+  const method = (config.method || '').toUpperCase()
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    config.headers['x-csrf-token'] = getCsrfToken()
+  }
+  return config
 })
 
 // Global response interceptor: on 401, redirect to /login

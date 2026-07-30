@@ -7,12 +7,26 @@ function buildUrl(url) {
   return `${API_BASE_URL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`
 }
 
+/** Read the signed CSRF token issued by the backend cookie. */
+function getCsrfToken() {
+  if (typeof document === 'undefined') return ''
+  const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
 export default async function authFetch(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase()
+  const csrfHeaders = STATE_CHANGING_METHODS.has(method)
+    ? { 'x-csrf-token': getCsrfToken() }
+    : {}
+
   const opts = {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
+      ...csrfHeaders,
       ...(options.headers || {}),
     },
     ...options,
@@ -27,7 +41,7 @@ export default async function authFetch(url, options = {}) {
         method: 'POST',
         credentials: 'include',
         headers: {
-          'X-Requested-With': 'XMLHttpRequest',
+          'x-csrf-token': getCsrfToken(),
         },
       })
     } catch (e) {

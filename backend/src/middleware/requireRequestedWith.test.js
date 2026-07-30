@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
   blockReactRouterActionEndpoints,
+  createCsrfToken,
   ensureCsrfCookie,
   requireRequestedWith,
 } from './requireRequestedWith.js'
@@ -23,7 +24,7 @@ describe('requireRequestedWith middleware', () => {
     expect(res.status).not.toHaveBeenCalled()
   })
 
-  it('allows state-changing request with X-Requested-With header', () => {
+  it('blocks state-changing request with X-Requested-With header alone (no CSRF token)', () => {
     const req = {
       method: 'POST',
       cookies: {},
@@ -34,12 +35,12 @@ describe('requireRequestedWith middleware', () => {
 
     requireRequestedWith(req, res, next)
 
-    expect(next).toHaveBeenCalled()
-    expect(res.status).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(next).not.toHaveBeenCalled()
   })
 
-  it('allows state-changing request with valid csrf cookie/header pair', () => {
-    const token = 'csrf-token-value'
+  it('allows state-changing request with valid signed csrf cookie/header pair', () => {
+    const token = createCsrfToken()
     const req = {
       method: 'PUT',
       cookies: { 'csrf-token': token },
@@ -52,6 +53,22 @@ describe('requireRequestedWith middleware', () => {
 
     expect(next).toHaveBeenCalled()
     expect(res.status).not.toHaveBeenCalled()
+  })
+
+  it('blocks state-changing request with mismatched csrf token', () => {
+    const token = createCsrfToken()
+    const req = {
+      method: 'PUT',
+      cookies: { 'csrf-token': token },
+      get: vi.fn((headerName) => (headerName === 'x-csrf-token' ? token + 'x' : undefined)),
+    }
+    const res = createRes()
+    const next = vi.fn()
+
+    requireRequestedWith(req, res, next)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(next).not.toHaveBeenCalled()
   })
 
   it('blocks state-changing request without ajax header and csrf token', () => {
@@ -83,21 +100,36 @@ describe('ensureCsrfCookie middleware', () => {
       expect.any(String),
       expect.objectContaining({
         httpOnly: false,
-        secure: true,
         sameSite: 'lax',
       }),
     )
     expect(next).toHaveBeenCalled()
   })
 
-  it('keeps existing csrf cookie unchanged', () => {
-    const req = { cookies: { 'csrf-token': 'existing-token' } }
+  it('keeps existing valid signed csrf cookie unchanged', () => {
+    const token = createCsrfToken()
+    const req = { cookies: { 'csrf-token': token } }
     const res = createRes()
     const next = vi.fn()
 
     ensureCsrfCookie(req, res, next)
 
     expect(res.cookie).not.toHaveBeenCalled()
+    expect(next).toHaveBeenCalled()
+  })
+
+  it('replaces an invalid (unsigned) csrf cookie', () => {
+    const req = { cookies: { 'csrf-token': 'unsigned-legacy-token' } }
+    const res = createRes()
+    const next = vi.fn()
+
+    ensureCsrfCookie(req, res, next)
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      'csrf-token',
+      expect.stringMatching(/^[a-f0-9]{32}\.[a-f0-9]{64}$/),
+      expect.any(Object),
+    )
     expect(next).toHaveBeenCalled()
   })
 })

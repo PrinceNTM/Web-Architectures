@@ -4,9 +4,12 @@
 /**
  * Pre-commit hook: scan staged files for common secret patterns.
  * Blocks commit if potential secrets are found.
+ *
+ * Uses spawnSync (not execSync/shell) to prevent OS command injection
+ * from malicious file names in the repository.
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 
 const SECRET_PATTERNS = [
@@ -25,26 +28,36 @@ const SKIP_EXTENSIONS = new Set([
 ]);
 
 function getStagedFiles() {
-  try {
-    const output = execSync('git diff --cached --name-only --diff-filter=ACM', { encoding: 'utf8' });
-    return output.trim().split('\n').filter(Boolean);
-  } catch {
-    return [];
-  }
+  const result = spawnSync(
+    'git',
+    ['diff', '--cached', '--name-only', '--diff-filter=ACM'],
+    { encoding: 'utf8' }
+  );
+  if (result.status !== 0 || result.error) return [];
+  return result.stdout.trim().split('\n').filter(Boolean);
 }
 
 function getStagedContent(file) {
-  try {
-    return execSync(`git show :${file}`, { encoding: 'utf8' });
-  } catch {
-    return '';
-  }
+  // Pass args as an array — never interpolated into a shell — to prevent injection.
+  const result = spawnSync(
+    'git',
+    ['show', `--`, `:${file}`],
+    { encoding: 'utf8', maxBuffer: 2 * 1024 * 1024 }
+  );
+  if (result.status !== 0 || result.error) return '';
+  return result.stdout;
 }
 
 const staged = getStagedFiles();
 let found = false;
 
 for (const file of staged) {
+  // Reject paths that start with '-' to prevent flag injection into git show.
+  if (file.startsWith('-')) {
+    console.error(`[SECRET SCAN] Skipping suspicious file path: "${file}"`);
+    continue;
+  }
+
   const ext = path.extname(file).toLowerCase();
   if (SKIP_EXTENSIONS.has(ext)) continue;
 

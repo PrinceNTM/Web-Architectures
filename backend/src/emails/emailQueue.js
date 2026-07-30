@@ -5,6 +5,30 @@ const emailQueue = []
 let isProcessing = false
 let workerInterval = null
 
+// Per-address sliding-window counters: address → { count, windowStart }
+const emailCounters = new Map()
+const EMAIL_MAX_PER_HOUR = Number(process.env.EMAIL_MAX_PER_HOUR) || 10
+const EMAIL_WINDOW_MS = 60 * 60 * 1000
+
+const checkEmailRateLimit = (to) => {
+  const now = Date.now()
+  const entry = emailCounters.get(to)
+  if (!entry || now - entry.windowStart > EMAIL_WINDOW_MS) {
+    emailCounters.set(to, { count: 1, windowStart: now })
+    return false // not limited
+  }
+  entry.count += 1
+  if (entry.count > EMAIL_MAX_PER_HOUR) {
+    if (entry.count === EMAIL_MAX_PER_HOUR + 1) {
+      // log once when limit is first breached — mask most of address
+      const masked = to.replace(/^(.{2}).*(@.*)$/, '$1***$2')
+      logger.warn('email.rate_limit.exceeded', { to: masked, count: entry.count })
+    }
+    return true // limited
+  }
+  return false
+}
+
 export const enqueueEmail = (job) => {
   emailQueue.push(job)
   logger.info('email.job.queued', { type: job.type })
@@ -19,6 +43,11 @@ const processNextJob = async () => {
   const job = emailQueue.shift()
 
   try {
+    if (job.to && checkEmailRateLimit(job.to)) {
+      logger.warn('email.job.rate_limited', { type: job.type })
+      return
+    }
+
     switch (job.type) {
       case 'habit_created':
         await sendHabitCreatedEmail({

@@ -4,7 +4,10 @@ import { setAuthCookie, clearAuthCookie } from '../utils/authSession.js'
 import { validatePassword } from '../utils/validatePassword.js'
 
 const BCRYPT_SALT_ROUNDS = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10)
-const DUMMY_HASH = '$2b$12$C6UzMDM.H6dfI/f/IKcEe.O3Kq8c6i6Y4xT7xvFeoJEB6Digw1k3e'
+const SALT_ROUNDS = Number.isInteger(BCRYPT_SALT_ROUNDS) && BCRYPT_SALT_ROUNDS >= 12
+  ? BCRYPT_SALT_ROUNDS
+  : 12
+const DUMMY_HASH = bcrypt.hashSync('dummy_password_to_prevent_timing_attacks', SALT_ROUNDS)
 
 const invalidCredentialsResponse = (res) =>
   res.status(401).json({ error: 'E-Mail oder Passwort ungültig.' })
@@ -28,11 +31,7 @@ export const register = async (req, res, next) => {
       return res.status(409).json({ error: 'E-Mail bereits vergeben.' })
     }
 
-    const saltRounds = Number.isInteger(BCRYPT_SALT_ROUNDS) && BCRYPT_SALT_ROUNDS >= 12
-      ? BCRYPT_SALT_ROUNDS
-      : 12
-
-    const hashedPassword = await bcrypt.hash(password, saltRounds)
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,

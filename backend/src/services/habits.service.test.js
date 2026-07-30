@@ -110,6 +110,34 @@ describe('Habits Service', () => {
     expect(broadcastEvent).toHaveBeenCalledWith(mockUserId, 'habit-created', createdHabit);
   });
 
+  it('should map optional habit fields with fallbacks and null conversions', async () => {
+    const dataWithOptionals = {
+      name: 'Fallback Habit',
+      category: '',
+      total: 5,
+      reminder: '1',
+      timeRange: 'Abend',
+    };
+    const createdHabit = { id: 'h2', name: 'Fallback Habit', userId: mockUserId, createdAt: new Date('2026-07-30T00:00:00.000Z') };
+    prisma.habit.create.mockResolvedValue(createdHabit);
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    const result = await createHabit(dataWithOptionals, mockUserId);
+
+    expect(result).toEqual(createdHabit);
+    expect(prisma.habit.create).toHaveBeenCalledWith({
+      data: {
+        name: 'Fallback Habit',
+        category: null,
+        targetPerDay: 5,
+        reminder: true,
+        timeOfDay: 'Abend',
+        userId: mockUserId,
+      },
+    });
+    expect(enqueueEmail).toHaveBeenCalledWith(expect.objectContaining({ to: undefined }));
+  });
+
   it('should throw ValidationError if name is missing (error case)', async () => {
     const invalidHabitData = { category: 'No name' };
     await expect(createHabit(invalidHabitData, mockUserId)).rejects.toThrow(ValidationError);
@@ -145,6 +173,57 @@ describe('Habits Service', () => {
       data: {
         name: updatedHabitData.name,
         category: updatedHabitData.category,
+      },
+      include: { entries: true },
+    });
+  });
+
+  it('should update optional fields using fallback sources', async () => {
+    const updatedHabitData = {
+      name: 'Updated Habit',
+      category: '',
+      dailyGoal: 2,
+      reminder: 0,
+      timeRange: 'Morgen',
+    };
+    prisma.habit.findUnique.mockResolvedValue(mockHabit);
+    prisma.habit.update.mockResolvedValue({ ...mockHabit, name: 'Updated Habit' });
+
+    await updateHabit(mockHabitId, updatedHabitData, mockUserId);
+
+    expect(prisma.habit.update).toHaveBeenCalledWith({
+      where: { id: mockHabitId },
+      data: {
+        name: 'Updated Habit',
+        category: null,
+        targetPerDay: 2,
+        reminder: false,
+        timeOfDay: 'Morgen',
+      },
+      include: { entries: true },
+    });
+  });
+
+  it('should update with null defaults when optional values are explicitly undefined aliases', async () => {
+    const updatedHabitData = {
+      name: 'Updated Habit 2',
+      category: undefined,
+      targetPerDay: undefined,
+      total: undefined,
+      dailyGoal: undefined,
+      reminder: undefined,
+      timeOfDay: undefined,
+      timeRange: undefined,
+    };
+    prisma.habit.findUnique.mockResolvedValue(mockHabit);
+    prisma.habit.update.mockResolvedValue({ ...mockHabit, name: 'Updated Habit 2' });
+
+    await updateHabit(mockHabitId, updatedHabitData, mockUserId);
+
+    expect(prisma.habit.update).toHaveBeenCalledWith({
+      where: { id: mockHabitId },
+      data: {
+        name: 'Updated Habit 2',
       },
       include: { entries: true },
     });

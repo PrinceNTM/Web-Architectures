@@ -38,5 +38,6 @@ export const clearAuthCookie = (res) => {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',
+    maxAge: 0,
   })
 }

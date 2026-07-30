@@ -115,8 +115,18 @@ The backend will be available at `http://localhost:3000`
 - `DELETE /api/habits/:id` - Delete a habit
 
 ### Check-ins
-- `POST /api/habits/:habitId/checkin` - Check off a habit
+- `POST /api/habits/:habitId/checkins` - Check off a habit
 - `GET /api/habits/:habitId/checkins` - Get check-ins for a habit
+
+## Prüfungsnachweise (Stand: 2026-07-30)
+
+- One-Command Start: `npm run dev` startet Frontend + Backend inkl. Env-Setup, Prisma generate/migrate und Port-Cleanup.
+- One-Command Tests: `npm test` führt Unit + E2E vollständig aus (4/4 Cypress Specs grün).
+- One-Command Coverage: `npm run test:coverage` erfolgreich.
+  - Backend Coverage (Vitest): Statements 96.11%, Branches 90.14%, Functions 96.29%, Lines 96.34%.
+  - Frontend Coverage (Vitest): Statements 89.7%, Branches 84.09%, Functions 100%, Lines 98.24%.
+- Coverage-Artefakte vorhanden in `backend/coverage` und `frontend/coverage`.
+- Deployment-Bonus: aktuell kein produktives Deployment nachgewiesen (optional).
 
 ## Contributing
 

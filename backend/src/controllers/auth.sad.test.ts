@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import crypto from 'node:crypto'
 
 // Mocks must be declared before importing the module under test
 const mockFindUnique = vi.fn()
@@ -19,13 +20,16 @@ vi.mock('bcrypt', () => ({
   __esModule: true,
   default: {
     compare: (...args: any[]) => mockCompare(...args),
+    hashSync: () => 'mock_dummy_hash',
   },
 }))
 
 import { login, register } from './authController.js'
 
-const VALID_TEST_PASSWORD = `Password!${Date.now()}`
-const INVALID_TEST_PASSWORD = `WrongPass!${Date.now()}`
+const VALID_TEST_PASSWORD = crypto.randomBytes(24).toString('hex')
+const INVALID_TEST_PASSWORD = crypto.randomBytes(24).toString('hex')
+const NON_EXISTING_USER_PASSWORD = crypto.randomBytes(24).toString('hex')
+const MOCK_PASSWORD_HASH = crypto.randomUUID()
 
 describe('Auth sad path tests', () => {
   beforeEach(() => {
@@ -41,7 +45,7 @@ describe('Auth sad path tests', () => {
   it('Login with non-existing email returns 401 with generic message', async () => {
     mockFindUnique.mockResolvedValue(null)
 
-    const req: any = { body: { email: 'notfound@example.com', password: 'irrelevant' } }
+    const req: any = { body: { email: 'notfound@example.com', password: NON_EXISTING_USER_PASSWORD } }
     const res: any = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -54,7 +58,7 @@ describe('Auth sad path tests', () => {
   })
 
   it('Login with wrong password returns 401 with generic message', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'user1', email: 'user@example.com', password: 'hashed' })
+    mockFindUnique.mockResolvedValue({ id: 'user1', email: 'user@example.com', password: MOCK_PASSWORD_HASH })
     mockCompare.mockResolvedValue(false)
 
     const req: any = { body: { email: 'user@example.com', password: INVALID_TEST_PASSWORD } }

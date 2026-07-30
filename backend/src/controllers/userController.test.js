@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import crypto from 'node:crypto'
+
+const MOCK_PASSWORD_HASH = crypto.randomUUID()
+const VALID_CURRENT_PASSWORD = crypto.randomBytes(24).toString('hex')
+const INVALID_CURRENT_PASSWORD = crypto.randomBytes(24).toString('hex')
 
 const mockFindUnique = vi.fn()
 const mockFindFirst = vi.fn()
@@ -104,12 +109,12 @@ describe('userController', () => {
   })
 
   it('returns 409 when normalized email is already used', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash', tokenVersion: 0 })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: MOCK_PASSWORD_HASH, tokenVersion: 0 })
     mockCompare.mockResolvedValue(true)
     mockFindFirst.mockResolvedValue({ id: 'u2' })
     const req = {
       user: { userId: 'u1' },
-      body: { email: 'Taken@Example.com', firstName: 'A', lastName: 'B', currentPassword: 'pw' },
+      body: { email: 'Taken@Example.com', firstName: 'A', lastName: 'B', currentPassword: VALID_CURRENT_PASSWORD },
     }
     const res = createRes()
     const next = vi.fn()
@@ -123,7 +128,7 @@ describe('userController', () => {
   })
 
   it('updates and normalizes profile values', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: MOCK_PASSWORD_HASH })
     mockCompare.mockResolvedValue(true)
     mockFindFirst.mockResolvedValue(null)
     mockUpdate.mockResolvedValue({
@@ -140,7 +145,7 @@ describe('userController', () => {
         email: 'NEW@EXAMPLE.COM',
         firstName: ' Max ',
         lastName: ' Mustermann ',
-        currentPassword: 'pw',
+        currentPassword: VALID_CURRENT_PASSWORD,
       },
     }
     const res = createRes()
@@ -170,7 +175,7 @@ describe('userController', () => {
   })
 
   it('forwards db errors in updateUserProfile via next()', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com', password: 'hash' })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com', password: MOCK_PASSWORD_HASH })
     mockFindFirst.mockResolvedValue(null)
     const dbError = new Error('update failed')
     mockUpdate.mockRejectedValue(dbError)
@@ -184,11 +189,11 @@ describe('userController', () => {
   })
 
   it('returns 401 when email changes without a valid current password', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: 'hash' })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'current@example.com', password: MOCK_PASSWORD_HASH })
     mockCompare.mockResolvedValue(false)
     const req = {
       user: { userId: 'u1' },
-      body: { email: 'new@example.com', currentPassword: 'bad-password' },
+      body: { email: 'new@example.com', currentPassword: INVALID_CURRENT_PASSWORD },
     }
     const res = createRes()
     const next = vi.fn()

@@ -12,7 +12,11 @@ import habitRoutes from './routes/habits.js'
 import userRoutes from './routes/user.js'
 import { initializeSocket } from './realtime/socket.js'
 import { startEmailQueueWorker } from './emails/emailQueue.js'
-import { requireRequestedWith } from './middleware/requireRequestedWith.js'
+import {
+  blockReactRouterActionEndpoints,
+  ensureCsrfCookie,
+  requireRequestedWith,
+} from './middleware/requireRequestedWith.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -97,11 +101,13 @@ app.use(cors({
   origin: corsOriginHandler,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
   exposedHeaders: ['Set-Cookie'],
 }))
 app.use(cookieParser())
 app.use(express.json({ limit: '100kb' }))
+app.use(ensureCsrfCookie)
+app.use(blockReactRouterActionEndpoints)
 app.use(requireRequestedWith)
 
 // Routes

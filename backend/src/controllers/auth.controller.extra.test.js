@@ -1,6 +1,10 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import crypto from 'node:crypto'
 
-const TEST_PASSWORD = `Password!${Date.now()}`
+const TEST_PASSWORD = crypto.randomBytes(24).toString('hex')
+const TEST_JWT_SECRET = crypto.randomBytes(32).toString('hex')
+const MOCK_PASSWORD_HASH = crypto.randomUUID()
+const MOCK_JWT_TOKEN = crypto.randomUUID()
 
 const { mockFindUnique, mockCreate, mockHash, mockCompare, mockSign } = vi.hoisted(() => ({
   mockFindUnique: vi.fn(),
@@ -23,6 +27,7 @@ vi.mock('bcrypt', () => ({
   default: {
     hash: (...args) => mockHash(...args),
     compare: (...args) => mockCompare(...args),
+    hashSync: () => 'mock_dummy_hash',
   },
 }))
 
@@ -34,7 +39,7 @@ vi.mock('jsonwebtoken', () => ({
 
 const loadController = async () => {
   vi.resetModules()
-  process.env.JWT_SECRET = 'test-secret'
+  process.env.JWT_SECRET = TEST_JWT_SECRET
   return import('./authController.js')
 }
 
@@ -69,7 +74,7 @@ describe('authController extra coverage', () => {
   it('register creates user and returns 201', async () => {
     const { register } = await loadController()
     mockFindUnique.mockResolvedValue(null)
-    mockHash.mockResolvedValue('hashed-password')
+    mockHash.mockResolvedValue(MOCK_PASSWORD_HASH)
     mockCreate.mockResolvedValue({ id: 'u1', email: 'user@example.com' })
     const req = { body: { email: 'USER@EXAMPLE.COM', password: TEST_PASSWORD } }
     const res = createRes()
@@ -98,16 +103,16 @@ describe('authController extra coverage', () => {
 
   it('login returns profile and sets cookie when credentials are valid', async () => {
     const { login } = await loadController()
-    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', password: 'hash' })
+    mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', password: MOCK_PASSWORD_HASH })
     mockCompare.mockResolvedValue(true)
-    mockSign.mockReturnValue('jwt-token')
+    mockSign.mockReturnValue(MOCK_JWT_TOKEN)
     const req = { body: { email: 'user@example.com', password: TEST_PASSWORD } }
     const res = createRes()
     const next = vi.fn()
 
     await login(req, res, next)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', 'jwt-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('token', MOCK_JWT_TOKEN, expect.any(Object))
     expect(res.json).toHaveBeenCalledWith({ id: 'u1', email: 'user@example.com' })
     expect(next).not.toHaveBeenCalled()
   })

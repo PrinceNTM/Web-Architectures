@@ -23,7 +23,13 @@ export default async function authFetch(url, options = {}) {
   if (res.status === 401) {
     try {
       // Attempt server-side logout to clear HttpOnly cookie
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      await fetch(buildUrl('/auth/logout'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      })
     } catch (e) {
       // ignore
     }

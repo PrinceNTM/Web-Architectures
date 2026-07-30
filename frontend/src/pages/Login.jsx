@@ -45,6 +45,10 @@ function Login({ setUser }) {
 
   return (
     <div className="login-page login-page-headspace">
+      <Link to="/" className="auth-corner-brand" aria-label="Zur Landingpage">
+        <span className="auth-corner-mark" aria-hidden="true">◉</span>
+        <span>Daily Habits</span>
+      </Link>
       <div className="login-shell">
         <aside className="login-ambient" aria-hidden="true">
           <span className="ambient-blob ambient-blob-main" />

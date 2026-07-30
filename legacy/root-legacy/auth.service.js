@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken';
 import prisma from '../../src/prisma.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const BCRYPT_SALT_ROUNDS = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
+const SALT_ROUNDS = Number.isInteger(BCRYPT_SALT_ROUNDS) && BCRYPT_SALT_ROUNDS >= 10
+  ? BCRYPT_SALT_ROUNDS
+  : 10;
+const DUMMY_HASH = bcrypt.hashSync('dummy_password_to_prevent_timing_attacks', SALT_ROUNDS);
 
 /**
  * Registriert einen neuen Benutzer.
@@ -15,7 +20,7 @@ export const registerUser = async (email, password) => {
     throw new Error('CONFLICT');
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   return await prisma.user.create({
     data: {
       email: normalizedEmail,
@@ -33,8 +38,7 @@ export const authenticateUser = async (email, password) => {
 
   // Timing-safe-ish check: bcrypt.compare sollte immer ausgeführt werden, 
   // um User-Enumeration durch Zeitmessung zu erschweren.
-  const dummyHash = "$2b$10$abcdefghijklmnopqrstuv"; // Fake-Hash für nicht existierende User
-  const passwordMatches = await bcrypt.compare(password, user ? user.password : dummyHash);
+  const passwordMatches = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
 
   if (!user || !passwordMatches) return null;
   return user;
@@ -53,6 +57,6 @@ export const generateToken = (user) => {
       email: user.email,
     },
     JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: '24h', algorithm: 'HS256' }
   );
 };

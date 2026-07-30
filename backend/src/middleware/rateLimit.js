@@ -11,5 +11,5 @@ const createRateLimiter = (windowMs, max) => rateLimit({
 })
 
 export const loginRateLimiter = createRateLimiter(15 * 60 * 1000, 10)
-export const registerRateLimiter = createRateLimiter(60 * 60 * 1000, 5)
+export const registerRateLimiter = createRateLimiter(15 * 60 * 1000, 10)
 export const authRateLimiter = createRateLimiter(15 * 60 * 1000, 60)

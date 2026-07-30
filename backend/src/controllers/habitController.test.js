@@ -70,6 +70,28 @@ describe('habitController', () => {
     expect(res.json).toHaveBeenCalledWith([{ id: 'h1' }])
   })
 
+  it('getHabits returns 500 when service throws', async () => {
+    mockHabitService.getAllHabits.mockRejectedValue(new Error('db down'))
+    const req = { user: { userId: 'u1' } }
+    const res = createRes()
+
+    await getHabits(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
+  })
+
+  it('getHabitById returns 200 for found habit', async () => {
+    mockHabitService.getHabitById.mockResolvedValue({ id: 'h1' })
+    const req = { params: { id: 'h1' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await getHabitById(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ id: 'h1' })
+  })
+
   it('getHabitById maps service status code', async () => {
     mockHabitService.getHabitById.mockRejectedValue({ statusCode: 404, message: 'Not found' })
     const req = { params: { id: 'h404' }, user: { userId: 'u1' } }
@@ -79,6 +101,17 @@ describe('habitController', () => {
 
     expect(res.status).toHaveBeenCalledWith(404)
     expect(res.json).toHaveBeenCalledWith({ error: 'Not found' })
+  })
+
+  it('getHabitById uses default status/message on unknown error', async () => {
+    mockHabitService.getHabitById.mockRejectedValue({})
+    const req = { params: { id: 'x' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await getHabitById(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
   })
 
   it('createHabit returns 201 on success', async () => {
@@ -103,6 +136,27 @@ describe('habitController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Name fehlt' })
   })
 
+  it('createHabit returns 500 on generic error', async () => {
+    mockHabitService.createHabit.mockRejectedValue(new Error('unexpected'))
+    const req = { user: { userId: 'u1' }, body: { name: 'Run' } }
+    const res = createRes()
+
+    await createHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
+  })
+
+  it('updateHabit returns updated habit on success', async () => {
+    mockHabitService.updateHabit.mockResolvedValue({ id: 'h1', name: 'Updated' })
+    const req = { params: { id: 'h1' }, body: { name: 'Updated' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await updateHabit(req, res)
+
+    expect(res.json).toHaveBeenCalledWith({ id: 'h1', name: 'Updated' })
+  })
+
   it('updateHabit returns 404 for P2025', async () => {
     mockHabitService.updateHabit.mockRejectedValue({ code: 'P2025' })
     const req = { params: { id: 'h1' }, body: { name: 'X' }, user: { userId: 'u1' } }
@@ -114,6 +168,28 @@ describe('habitController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Gewohnheit nicht gefunden.' })
   })
 
+  it('updateHabit returns 404 for statusCode 404', async () => {
+    mockHabitService.updateHabit.mockRejectedValue({ statusCode: 404 })
+    const req = { params: { id: 'h1' }, body: { name: 'X' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await updateHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Gewohnheit nicht gefunden.' })
+  })
+
+  it('updateHabit returns 500 for non-404 error', async () => {
+    mockHabitService.updateHabit.mockRejectedValue(new Error('boom'))
+    const req = { params: { id: 'h1' }, body: { name: 'X' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await updateHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
+  })
+
   it('deleteHabit returns 204 on success', async () => {
     mockHabitService.deleteHabit.mockResolvedValue(undefined)
     const req = { params: { id: 'h1' }, user: { userId: 'u1' } }
@@ -123,6 +199,28 @@ describe('habitController', () => {
 
     expect(res.status).toHaveBeenCalledWith(204)
     expect(res.send).toHaveBeenCalled()
+  })
+
+  it('deleteHabit returns 404 for statusCode 404', async () => {
+    mockHabitService.deleteHabit.mockRejectedValue({ statusCode: 404 })
+    const req = { params: { id: 'h1' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await deleteHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Gewohnheit nicht gefunden.' })
+  })
+
+  it('deleteHabit returns 500 for generic error', async () => {
+    mockHabitService.deleteHabit.mockRejectedValue(new Error('boom'))
+    const req = { params: { id: 'h1' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await deleteHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
   })
 
   it('checkInHabit checks ownership and creates entry', async () => {
@@ -142,6 +240,21 @@ describe('habitController', () => {
     expect(res.json).toHaveBeenCalledWith({ id: 'e1' })
   })
 
+  it('checkInHabit maps service errors with status/message', async () => {
+    mockHabitService.getHabitById.mockRejectedValue({ statusCode: 403, message: 'Forbidden' })
+    const req = {
+      params: { habitId: 'h1' },
+      body: { date: '2026-07-28' },
+      user: { userId: 'u1' },
+    }
+    const res = createRes()
+
+    await checkInHabit(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Forbidden' })
+  })
+
   it('removeHabitCheckin returns 204', async () => {
     mockHabitService.getHabitById.mockResolvedValue({ id: 'h1' })
     mockTrackingService.deleteEntry.mockResolvedValue({ count: 1 })
@@ -157,6 +270,21 @@ describe('habitController', () => {
     expect(res.status).toHaveBeenCalledWith(204)
   })
 
+  it('removeHabitCheckin uses default error message when missing', async () => {
+    mockHabitService.getHabitById.mockRejectedValue({ statusCode: 500 })
+    const req = {
+      params: { habitId: 'h1' },
+      query: { date: '2026-07-28' },
+      user: { userId: 'u1' },
+    }
+    const res = createRes()
+
+    await removeHabitCheckin(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
+  })
+
   it('getHabitCheckins returns entries', async () => {
     mockHabitService.getHabitById.mockResolvedValue({ id: 'h1' })
     mockTrackingService.getEntriesByHabitId.mockResolvedValue([{ id: 'e1' }])
@@ -168,6 +296,17 @@ describe('habitController', () => {
     expect(res.json).toHaveBeenCalledWith([{ id: 'e1' }])
   })
 
+  it('getHabitCheckins maps service error status', async () => {
+    mockHabitService.getHabitById.mockRejectedValue({ statusCode: 404, message: 'Not found' })
+    const req = { params: { habitId: 'h1' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await getHabitCheckins(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Not found' })
+  })
+
   it('resetCheckinsForDate returns success', async () => {
     mockTrackingService.deleteEntriesByDate.mockResolvedValue({ count: 2 })
     const req = { body: { date: '2026-07-28' }, user: { userId: 'u1' } }
@@ -177,6 +316,17 @@ describe('habitController', () => {
 
     expect(mockTrackingService.deleteEntriesByDate).toHaveBeenCalledWith('2026-07-28', 'u1')
     expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  it('resetCheckinsForDate returns 500 on failure', async () => {
+    mockTrackingService.deleteEntriesByDate.mockRejectedValue(new Error('db'))
+    const req = { body: { date: '2026-07-28' }, user: { userId: 'u1' } }
+    const res = createRes()
+
+    await resetCheckinsForDate(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Interner Serverfehler.' })
   })
 
   it('setupSSEConnection sets headers, sends initial message and handles close', () => {
@@ -203,5 +353,27 @@ describe('habitController', () => {
     closeHandler()
     expect(mockRemoveClient).toHaveBeenCalledWith('u1', res)
     expect(res.end).toHaveBeenCalled()
+  })
+
+  it('setupSSEConnection removes client when heartbeat write fails', () => {
+    vi.useFakeTimers()
+    const req = {
+      user: { userId: 'u1' },
+      on: vi.fn(),
+    }
+    const res = createRes()
+    let heartbeatCalls = 0
+    res.write = vi.fn(() => {
+      heartbeatCalls += 1
+      if (heartbeatCalls > 1) {
+        throw new Error('write failed')
+      }
+    })
+
+    setupSSEConnection(req, res)
+
+    vi.advanceTimersByTime(30000)
+
+    expect(mockRemoveClient).toHaveBeenCalledWith('u1', res)
   })
 })

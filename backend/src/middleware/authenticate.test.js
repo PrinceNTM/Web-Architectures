@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import crypto from 'node:crypto'
+
+const TEST_JWT_SECRET = crypto.randomBytes(32).toString('hex')
+const VALID_TOKEN = crypto.randomUUID()
+const STALE_TOKEN = crypto.randomUUID()
+const INVALID_TOKEN = crypto.randomUUID()
 
 const mockVerify = vi.fn()
 const mockFindUnique = vi.fn()
@@ -27,7 +33,7 @@ describe('authenticate middleware', () => {
     vi.resetModules()
     mockVerify.mockReset()
     mockFindUnique.mockReset()
-    process.env.JWT_SECRET = 'test-secret'
+    process.env.JWT_SECRET = TEST_JWT_SECRET
   })
 
   it('returns 401 when no token is provided', async () => {
@@ -46,7 +52,7 @@ describe('authenticate middleware', () => {
   it('returns 500 when JWT secret is missing', async () => {
     delete process.env.JWT_SECRET
     const { authenticate } = await import('./authenticate.js')
-    const req = { cookies: { token: 'abc' }, query: {} }
+    const req = { cookies: { token: VALID_TOKEN }, query: {} }
     const res = createRes()
     const next = vi.fn()
 
@@ -61,13 +67,13 @@ describe('authenticate middleware', () => {
     mockVerify.mockReturnValue({ userId: 'u1', email: 'user@example.com', tokenVersion: 2 })
     mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', tokenVersion: 2 })
     const { authenticate } = await import('./authenticate.js')
-    const req = { cookies: { token: 'valid-token' }, query: {} }
+    const req = { cookies: { token: VALID_TOKEN }, query: {} }
     const res = createRes()
     const next = vi.fn()
 
     await authenticate(req, res, next)
 
-    expect(mockVerify).toHaveBeenCalledWith('valid-token', 'test-secret', { algorithms: ['HS256'] })
+    expect(mockVerify).toHaveBeenCalledWith(VALID_TOKEN, TEST_JWT_SECRET, { algorithms: ['HS256'] })
     expect(req.user).toEqual({ userId: 'u1', email: 'user@example.com', tokenVersion: 2 })
     expect(next).toHaveBeenCalled()
   })
@@ -76,7 +82,7 @@ describe('authenticate middleware', () => {
     mockVerify.mockReturnValue({ userId: 'u1', email: 'user@example.com', tokenVersion: 1 })
     mockFindUnique.mockResolvedValue({ id: 'u1', email: 'user@example.com', tokenVersion: 2 })
     const { authenticate } = await import('./authenticate.js')
-    const req = { cookies: { token: 'stale-token' }, query: {} }
+    const req = { cookies: { token: STALE_TOKEN }, query: {} }
     const res = createRes()
     const next = vi.fn()
 
@@ -92,7 +98,7 @@ describe('authenticate middleware', () => {
       throw new Error('invalid token')
     })
     const { authenticate } = await import('./authenticate.js')
-    const req = { cookies: { token: 'bad-token' }, query: {} }
+    const req = { cookies: { token: INVALID_TOKEN }, query: {} }
     const res = createRes()
     const next = vi.fn()
 

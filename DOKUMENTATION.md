@@ -52,7 +52,12 @@ Was wir heute anders machen wuerden:
 - UI-Designsystem frueher formalisieren (Tokens, Komponentenrichtlinien, Accessibility-Checklisten).
 - Doppelstrukturen im Repository frueh bereinigen, damit nur ein aktiver Codepfad existiert.
 
+Wesentliche Learnings:
+- Sicherheits-Haertungen koennen direkte Auswirkungen auf UX (z. B. CSP) haben und muessen frueh mit UI-Checks gekoppelt werden.
+- Branch-Coverage erfordert gezielte Fehlerpfad-Tests; reine Happy-Path-Tests reichen nicht fuer belastbare Qualitaet.
+- Ein zentraler Root-Workflow reduziert Abgaberisiken deutlich (gleiche Pipeline fuer Start, Test und Coverage).
+
 ## 7. Offene Punkte bis Abgabe
 - Optionales produktives Deployment (z. B. Hetzner/Render) dokumentieren.
 - Weitere E2E-Cases fuer Profil- und Check-in-Flows ergaenzen.
-- Coverage kontinuierlich verbessern, bis reale 80% fuer Kernmodule stabil sind.
+- Optional: CI-Pipeline (GitHub Actions) fuer automatische Verifikation bei jedem Push.

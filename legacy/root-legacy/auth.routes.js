@@ -6,7 +6,7 @@ const router = Router();
 const TOKEN_NAME = 'token';
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: true,
   sameSite: 'lax',
   maxAge: 24 * 60 * 60 * 1000,
 };
@@ -54,8 +54,9 @@ router.get('/me', authenticate, (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie(TOKEN_NAME, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'lax',
+    maxAge: 0,
   });
   return res.json({ success: true });
 });
